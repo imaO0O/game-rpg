@@ -1,0 +1,70 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/hud.gd" id="1_hud"]
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="Root" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="CaffeineBack" type="ColorRect" parent="Root"]
+offset_left = 12.0
+offset_top = 334.0
+offset_right = 132.0
+offset_bottom = 340.0
+color = Color(0.09, 0.14, 0.11, 0.75)
+
+[node name="CaffeineFill" type="ColorRect" parent="Root"]
+offset_left = 12.0
+offset_top = 334.0
+offset_right = 132.0
+offset_bottom = 340.0
+
+[node name="MomentumBack" type="ColorRect" parent="Root"]
+offset_left = 12.0
+offset_top = 324.0
+offset_right = 132.0
+offset_bottom = 330.0
+color = Color(0.09, 0.14, 0.11, 0.75)
+
+[node name="MomentumFill" type="ColorRect" parent="Root"]
+offset_left = 12.0
+offset_top = 324.0
+offset_right = 132.0
+offset_bottom = 330.0
+
+[node name="Drs" type="Label" parent="Root"]
+offset_left = 12.0
+offset_top = 302.0
+offset_right = 200.0
+offset_bottom = 320.0
+theme_override_font_sizes/font_size = 12
+
+[node name="Shards" type="Label" parent="Root"]
+offset_left = 500.0
+offset_top = 12.0
+offset_right = 628.0
+offset_bottom = 30.0
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 2
+
+[node name="Toast" type="Label" parent="Root"]
+offset_left = 60.0
+offset_top = 246.0
+offset_right = 580.0
+offset_bottom = 264.0
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+
+[node name="ToastHint" type="Label" parent="Root"]
+offset_left = 60.0
+offset_top = 264.0
+offset_right = 580.0
+offset_bottom = 280.0
+theme_override_font_sizes/font_size = 9
+horizontal_alignment = 1
+autowrap_mode = 2

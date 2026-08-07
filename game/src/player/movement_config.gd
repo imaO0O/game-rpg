@@ -56,6 +56,21 @@ extends Resource
 ## Пауза между рывками.
 @export var drs_cooldown := 0.35
 
+@export_group("Слипстрим")
+## Воздушный рывок. Та же кнопка, что DRS: на земле — DRS, в воздухе — слипстрим.
+@export var slipstream_speed := 300.0
+@export var slipstream_duration := 0.16
+## Невесомость на время рывка, иначе он не читается как рывок.
+@export var slipstream_gravity_mult := 0.0
+## Лёгкий подброс — чтобы рывком можно было дотянуться до площадки выше.
+@export var slipstream_lift := -70.0
+
+@export_group("Вода")
+## Без Мокрой резины в воде скользко: доля от обычного трения.
+@export var water_friction_mult := 0.25
+## И медленнее: доля от максимальной скорости.
+@export var water_speed_mult := 0.7
+
 @export_group("Squash & stretch")
 @export var squash_jump := Vector2(0.78, 1.28)
 @export var squash_land := Vector2(1.32, 0.72)

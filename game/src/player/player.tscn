@@ -8,6 +8,7 @@
 size = Vector2(12, 20)
 
 [node name="Player" type="CharacterBody2D"]
+z_index = 10
 script = ExtResource("1_player")
 config = ExtResource("2_config")
 

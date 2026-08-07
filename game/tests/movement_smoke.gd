@@ -1,5 +1,5 @@
-## Дымовой тест движения. Гоняет полигон без окна и проверяет,
-## что ядро из DESIGN.md §5 действительно работает.
+## Дымовой тест движения и способностей. Гоняет полигон без окна
+## и проверяет, что ядро из DESIGN.md §5–6 действительно работает.
 ##
 ## Запуск:
 ##   godot --headless --path game res://tests/movement_smoke.tscn
@@ -12,6 +12,7 @@ const TESTBED := preload("res://src/levels/testbed.tscn")
 const SETTLE := 0.4
 const RUN := 3.0
 const TURN := 0.4
+const WATER := 1.2
 
 var _player: Player
 var _phase := 0
@@ -19,7 +20,7 @@ var _timer := 0.0
 var _failures: PackedStringArray = []
 var _checks := 0
 
-var _speed_at_full_momentum := 0.0
+var _momentum_in_water := 0.0
 
 
 func _ready() -> void:
@@ -36,7 +37,11 @@ func _physics_process(delta: float) -> void:
 		1: _phase_run()
 		2: _phase_turn()
 		3: _phase_jump()
-		4: _finish()
+		4: _phase_slipstream()
+		5: _phase_land_before_water()
+		6: _phase_water_without_ability()
+		7: _phase_water_with_ability()
+		8: _finish()
 
 
 ## Игрок должен спокойно стоять на полу, а не проваливаться и не висеть.
@@ -56,17 +61,14 @@ func _phase_run() -> void:
 	if _timer < RUN:
 		return
 	var cfg := _player.config
-	_speed_at_full_momentum = absf(_player.velocity.x)
+	var speed := absf(_player.velocity.x)
 
 	_check(_player.momentum > 0.95, "разгон набран за %.0f с (momentum=%.2f)" % [RUN, _player.momentum])
 	_check(
-		_speed_at_full_momentum > cfg.top_speed * 0.9,
-		"скорость подошла к пределу (%.0f из %.0f)" % [_speed_at_full_momentum, cfg.top_speed]
+		speed > cfg.top_speed * 0.9,
+		"скорость подошла к пределу (%.0f из %.0f)" % [speed, cfg.top_speed]
 	)
-	_check(
-		_speed_at_full_momentum > cfg.base_speed * 1.5,
-		"разгон реально быстрее базовой скорости"
-	)
+	_check(speed > cfg.base_speed * 1.5, "разгон реально быстрее базовой скорости")
 	_check(_player.can_use_drs(), "DRS открылся на прямой")
 	_next(2)
 
@@ -92,7 +94,76 @@ func _phase_jump() -> void:
 		return
 	_check(_player.velocity.y < 0.0, "прыжок поднимает игрока (vy=%.0f)" % _player.velocity.y)
 	Input.action_release("jump")
+
+	# Слипстрим без способности не должен работать даже в воздухе.
+	_check(not _player.can_slipstream(), "слипстрим закрыт, пока способность не открыта")
+
+	Game.unlock(Abilities.Kind.SLIPSTREAM)
+	_check(_player.can_slipstream(), "слипстрим открылся вместе со способностью")
+
 	_next(4)
+	Input.action_press("drs")
+
+
+func _phase_slipstream() -> void:
+	if _timer < 0.05:
+		return
+	Input.action_release("drs")
+
+	_check(
+		absf(_player.velocity.x) > _player.config.slipstream_speed * 0.9,
+		"слипстрим разогнал в воздухе (vx=%.0f)" % _player.velocity.x
+	)
+	_check(not _player.can_slipstream(), "второй рывок в том же прыжке недоступен")
+	_next(5)
+
+
+## Ждём земли: водные проверки имеют смысл только на опоре.
+func _phase_land_before_water() -> void:
+	if not _player.is_on_floor():
+		return
+
+	_player.enter_water()
+	_player.momentum = 0.0
+	_check(_player.in_water(), "игрок в воде")
+	_check(not Game.has_ability(Abilities.Kind.WET_TYRES), "Мокрой резины пока нет")
+
+	_next(6)
+	Input.action_press("move_right")
+
+
+func _phase_water_without_ability() -> void:
+	if _timer < WATER:
+		return
+	_momentum_in_water = _player.momentum
+
+	_check(
+		is_zero_approx(_momentum_in_water),
+		"без Мокрой резины разгон в воде не набирается (momentum=%.2f)" % _momentum_in_water
+	)
+	_check(
+		absf(_player.velocity.x) < _player.config.base_speed,
+		"без Мокрой резины в воде медленнее обычного (vx=%.0f)" % _player.velocity.x
+	)
+
+	Game.unlock(Abilities.Kind.WET_TYRES)
+	_next(7)
+
+
+func _phase_water_with_ability() -> void:
+	if _timer < WATER:
+		return
+	_check(
+		_player.momentum > _momentum_in_water,
+		"с Мокрой резиной разгон в воде пошёл (momentum=%.2f)" % _player.momentum
+	)
+	_check(
+		absf(_player.velocity.x) > _player.config.base_speed,
+		"с Мокрой резиной в воде скорость восстановилась (vx=%.0f)" % _player.velocity.x
+	)
+
+	Input.action_release("move_right")
+	_next(8)
 
 
 func _finish() -> void:
@@ -104,14 +175,14 @@ func _finish() -> void:
 
 	print("ПРОВАЛЕНО: %d из %d" % [_failures.size(), _checks])
 	for f in _failures:
-		print("  ✗ ", f)
+		print("  x ", f)
 	get_tree().quit(1)
 
 
 func _check(condition: bool, label: String) -> void:
 	_checks += 1
 	if condition:
-		print("  ✓ ", label)
+		print("  + ", label)
 	else:
 		_failures.append(label)
 

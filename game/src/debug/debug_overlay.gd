@@ -10,7 +10,8 @@ extends CanvasLayer
 
 
 func _ready() -> void:
-	visible = true
+	# По умолчанию скрыт: играть надо с HUD, а не с таблицей чисел.
+	visible = false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -31,6 +32,9 @@ func _process(_delta: float) -> void:
 		"",
 		"прямая     %.2f с" % s.clean,
 		"DRS        %s" % ("ГОТОВ" if s.drs_ready else _drs_reason(s)),
+		"слипстрим  %s" % ("готов" if s.slipstream_ready else "—"),
+		"сталк      %s" % ("вкл" if s.stalk else "выкл"),
+		"вода       %s" % _water_label(s),
 		"",
 		"coyote     %.3f" % s.coyote,
 		"buffer     %.3f" % s.buffer,
@@ -50,6 +54,12 @@ func _drs_reason(s: Dictionary) -> String:
 	if s.caffeine < player.config.drs_cost:
 		return "нет кофеина"
 	return "перезарядка"
+
+
+func _water_label(s: Dictionary) -> String:
+	if not s.water:
+		return "нет"
+	return "скользко" if s.slipping else "сцепление"
 
 
 func _bar(ratio: float, width: int = 10) -> String:
