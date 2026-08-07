@@ -1,0 +1,42 @@
+# === ЛИЧНОЕ — НИКОГДА НЕ КОММИТИТЬ ===
+# Репозиторий публичный: в него едет только движок.
+# Весь контент и документация живут локально и бэкапятся отдельно, вне git.
+
+# Документация (концепция, шутки, план — раскрывают сюрприз целиком)
+*.md
+
+# Материалы и контент: фото, видео, голосовые, переписка, диалоги, имена локаций
+private/
+assets/photos/
+assets/video/
+assets/voice/
+assets/chat/
+*.export.json
+
+# === Godot 4 ===
+.godot/
+/android/
+export_presets.cfg
+*.translation
+
+# === Сборки ===
+build/
+builds/
+*.exe
+*.pck
+*.zip
+*.dmg
+
+# === Aseprite ===
+*.aseprite-autosave
+
+# === ОС ===
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# === Редакторы ===
+.vscode/
+.idea/
+*.swp
+*~
