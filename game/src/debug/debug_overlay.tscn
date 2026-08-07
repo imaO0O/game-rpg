@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/debug/debug_overlay.gd" id="1_overlay"]
+
+[node name="DebugOverlay" type="CanvasLayer"]
+script = ExtResource("1_overlay")
+
+[node name="Panel" type="PanelContainer" parent="."]
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 250.0
+offset_bottom = 210.0
+
+[node name="Stats" type="Label" parent="Panel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "…"
