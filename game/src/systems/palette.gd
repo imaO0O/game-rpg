@@ -18,3 +18,13 @@ const FERRARI := Color("dc0000")
 const SHARD := Color("e8d9a0")
 const COFFEE := Color("c8a06a")
 const WATER := Color("2a5a7a")
+
+## Сочи: то же семейство, но теплее и светлее — солнце и море.
+const SOCHI_BACKGROUND := Color("0d2028")
+const SOCHI_BLOCK := Color("1d4150")
+const SOCHI_EDGE := Color("3a7a8c")
+const SEA := Color("15414f")
+const SUN := Color("d9a854")
+
+## Разметка трассы.
+const KERB := Color("b03535")

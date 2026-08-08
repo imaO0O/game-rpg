@@ -20,6 +20,11 @@ const HUD_SCENE := preload("res://src/ui/hud.tscn")
 ## Название для игрока — показывается при входе.
 @export var room_title := ""
 
+## Фон и цвет геометрии. Области отличаются в первую очередь ими.
+var background := Palette.BACKGROUND
+var block_color := Palette.BLOCK
+var edge_color := Palette.EDGE
+
 var player: Player
 var camera: GameCamera
 var hud: CanvasLayer
@@ -37,9 +42,10 @@ var _entered_from := ""
 
 
 func _ready() -> void:
-	RenderingServer.set_default_clear_color(Palette.BACKGROUND)
-
 	_define()
+
+	# Цвет фона комната может переопределить: у Сочи он теплее, чем у Рязани.
+	RenderingServer.set_default_clear_color(background)
 
 	_build_geometry()
 	_spawn_player()
@@ -78,6 +84,22 @@ func bounds(x: int, y: int, w: int, h: int) -> void:
 ## Именованная точка входа. `name` совпадает с тем, что указывает дверь.
 func spawn(name: String, x: int, y: int) -> void:
 	_spawns[name] = Vector2(x * TILE, y * TILE)
+
+
+## Декорация без коллизии: окна, море, разметка. Рисуется под геометрией.
+func decor(x: int, y: int, w: int, h: int, color: Color) -> void:
+	var rect := Rect2(Vector2(x, y) * TILE, Vector2(w, h) * TILE)
+
+	var poly := Polygon2D.new()
+	poly.color = color
+	poly.z_index = -5
+	poly.polygon = PackedVector2Array([
+		rect.position,
+		Vector2(rect.end.x, rect.position.y),
+		rect.end,
+		Vector2(rect.position.x, rect.end.y),
+	])
+	add_child(poly)
 
 
 func shard(x: int, y: int, id: String, caption := "") -> void:
@@ -140,6 +162,19 @@ func door(x: int, y: int, to_scene: String, to_spawn: String, height := 48.0) ->
 	var node := RoomDoor.new()
 	node.target_scene = to_scene
 	node.target_spawn = to_spawn
+	node.size = Vector2(20.0, height)
+	node.position = Vector2(x * TILE, y * TILE)
+	add_child(node)
+
+
+## Дверь посреди комнаты — только по нажатию. Автоматическая на пути
+## движения перехватывала бы всех, кто просто пробегал мимо.
+func door_here(x: int, y: int, to_scene: String, to_spawn: String, label: String, height := 48.0) -> void:
+	var node := RoomDoor.new()
+	node.target_scene = to_scene
+	node.target_spawn = to_spawn
+	node.require_interact = true
+	node.label = label
 	node.size = Vector2(20.0, height)
 	node.position = Vector2(x * TILE, y * TILE)
 	add_child(node)
@@ -231,7 +266,7 @@ func _build_geometry() -> void:
 		body.add_child(collision)
 
 		var fill := Polygon2D.new()
-		fill.color = Palette.BLOCK
+		fill.color = block_color
 		fill.polygon = PackedVector2Array([
 			rect.position,
 			Vector2(rect.end.x, rect.position.y),
@@ -241,7 +276,7 @@ func _build_geometry() -> void:
 
 		# Светлая кромка сверху — без неё блоки сливаются в кашу.
 		var edge := Polygon2D.new()
-		edge.color = Palette.EDGE
+		edge.color = edge_color
 		edge.polygon = PackedVector2Array([
 			rect.position,
 			Vector2(rect.end.x, rect.position.y),

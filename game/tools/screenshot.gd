@@ -14,8 +14,13 @@ const SCENES := [
 	{"name": "02_ryazan_yard", "path": "res://src/levels/ryazan/yard.tscn"},
 	{"name": "03_ryazan_park", "path": "res://src/levels/ryazan/park.tscn"},
 	{"name": "04_ryazan_cellar", "path": "res://src/levels/ryazan/cellar.tscn"},
-	{"name": "05_lair", "path": "res://src/levels/lair.tscn"},
-	{"name": "06_testbed", "path": "res://src/levels/testbed.tscn"},
+	{"name": "05_transsib", "path": "res://src/levels/transsib/train.tscn"},
+	{"name": "06_sochi_promenade", "path": "res://src/levels/sochi/promenade.tscn"},
+	{"name": "07_sochi_straight", "path": "res://src/levels/sochi/straight.tscn"},
+	{"name": "08_sochi_turn3", "path": "res://src/levels/sochi/turn3.tscn"},
+	{"name": "09_sochi_paddock", "path": "res://src/levels/sochi/paddock.tscn"},
+	{"name": "10_lair", "path": "res://src/levels/lair.tscn"},
+	{"name": "11_testbed", "path": "res://src/levels/testbed.tscn"},
 ]
 
 

@@ -238,7 +238,9 @@ func _try_slipstream() -> void:
 	_slipstream_ready = false
 	_slipstream_time = config.slipstream_duration
 	velocity.x = facing * config.slipstream_speed
-	velocity.y = config.slipstream_lift
+	# Подброс, а не сброс: рывок на восходящем прыжке не должен его обрезать.
+	# Иначе рывок в верхней точке укорачивает полёт вместо того, чтобы удлинить.
+	velocity.y = minf(velocity.y, config.slipstream_lift)
 	slipstream_fired.emit()
 
 

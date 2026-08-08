@@ -7,6 +7,7 @@ extends Room
 
 const YARD := "res://src/levels/ryazan/yard.tscn"
 const CELLAR := "res://src/levels/ryazan/cellar.tscn"
+const TRAIN := "res://src/levels/transsib/train.tscn"
 
 
 func _define() -> void:
@@ -42,15 +43,18 @@ func _define() -> void:
 	# Возврат из подвала — в стороне от двери вниз, иначе игрок
 	# провалился бы обратно тем же кадром.
 	spawn("cellar", 35, 26)
+	# Возврат из вагона — за змеиной дверью, а не перед ней.
+	spawn("exit", 60, 24)
 
 	shard(20, 14, "ryazan_03", "Парк")
 
 	# Выход из области. Открывается Змееустом, который лежит в подвале.
 	snake_door(58, 24, "ryazan_exit", 96.0)
 
-	# За дверью — то, ради чего вся петля.
-	shard(61, 24, "ryazan_04", "За калиткой")
-	dialogue(61, 24, "ryazan_transsib", "Пинки")
+	# За дверью — то, ради чего вся петля: выход из области.
+	shard(61, 22, "ryazan_04", "За калиткой")
+	dialogue(60, 24, "ryazan_transsib", "Пинки")
 
 	door(2, 24, YARD, "east")
 	door(28, 26, CELLAR, "start")
+	door(62, 24, TRAIN, "ryazan")
