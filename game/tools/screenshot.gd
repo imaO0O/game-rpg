@@ -8,6 +8,7 @@
 extends Node
 
 const TESTBED := preload("res://src/levels/testbed.tscn")
+const LAIR := preload("res://src/levels/lair.tscn")
 const OUT_DIR := "user://shots"
 
 ## Куда смотреть и как это назвать.
@@ -45,8 +46,43 @@ func _run() -> void:
 	for shot: Dictionary in SHOTS:
 		await _capture(shot)
 
+	await _capture_lair()
+
 	print("папка: ", ProjectSettings.globalize_path(OUT_DIR))
 	get_tree().quit(0)
+
+
+## Логово снимаем отдельно: это другая сцена и другое состояние —
+## часть осколков найдена, часть ещё нет.
+func _capture_lair() -> void:
+	_player.get_parent().queue_free()
+
+	Game.collect_shard("testbed_ladder")
+	Game.collect_shard("testbed_gap")
+	Game.register_stop("testbed_start", {"city": "Рязань", "drink": "раф"})
+	Game.register_stop("testbed_far", {"city": "Сочи", "drink": "эспрессо"})
+
+	var lair := LAIR.instantiate()
+	add_child(lair)
+
+	for i in 40:
+		await get_tree().process_frame
+
+	# Центр комнаты, а не центр мира: иначе половину кадра занимает пустота.
+	var camera: GameCamera = lair.get_node("Camera")
+	camera.target = null
+	camera.global_position = Vector2(352.0, 136.0)
+
+	for i in 20:
+		await get_tree().process_frame
+
+	await RenderingServer.frame_post_draw
+
+	var image := get_viewport().get_texture().get_image()
+	if image.save_png("%s/07_lair.png" % OUT_DIR) != OK:
+		push_error("Не удалось сохранить снимок Логова")
+		return
+	print("снято: 07_lair — Логово")
 
 
 func _capture(shot: Dictionary) -> void:

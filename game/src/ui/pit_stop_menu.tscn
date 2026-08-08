@@ -1,0 +1,50 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/pit_stop_menu.gd" id="1_pitstop"]
+
+[node name="PitStopMenu" type="CanvasLayer"]
+layer = 2
+script = ExtResource("1_pitstop")
+
+[node name="Root" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Shade" type="ColorRect" parent="Root"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.03, 0.08, 0.06, 0.75)
+
+[node name="Panel" type="PanelContainer" parent="Root"]
+offset_left = 180.0
+offset_top = 90.0
+offset_right = 460.0
+offset_bottom = 270.0
+
+[node name="Margin" type="MarginContainer" parent="Root/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="Box" type="VBoxContainer" parent="Root/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Root/Panel/Margin/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Куда едем?"
+
+[node name="List" type="VBoxContainer" parent="Root/Panel/Margin/Box"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Hint" type="Label" parent="Root/Panel/Margin/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "↑↓ — выбрать, Enter — ехать, Esc — остаться"

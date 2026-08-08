@@ -1,0 +1,17 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/levels/lair.gd" id="1_lair"]
+[ext_resource type="PackedScene" path="res://src/player/player.tscn" id="2_player"]
+[ext_resource type="Script" path="res://src/camera/game_camera.gd" id="3_camera"]
+[ext_resource type="PackedScene" path="res://src/ui/hud.tscn" id="4_hud"]
+
+[node name="Lair" type="Node2D"]
+script = ExtResource("1_lair")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(64, 224)
+
+[node name="Camera" type="Camera2D" parent="."]
+script = ExtResource("3_camera")
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]

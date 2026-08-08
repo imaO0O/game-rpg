@@ -8,6 +8,7 @@ extends Area2D
 
 signal used(shop: CoffeeShop)
 
+const PIT_STOP_MENU := preload("res://src/ui/pit_stop_menu.tscn")
 const SIZE := Vector2(28.0, 36.0)
 const COLOR_IDLE := Color("6b5540")
 const COLOR_ACTIVE := Color("c8a06a")
@@ -67,6 +68,31 @@ func _use() -> void:
 	Game.save_game()
 
 	used.emit(self)
+	_offer_pit_stop()
+
+
+## С Пит-стопом кофейня перестаёт быть только точкой сохранения
+## и становится узлом сети.
+func _offer_pit_stop() -> void:
+	if not Game.has_ability(Abilities.Kind.PIT_STOP):
+		return
+
+	var others := Game.other_stops(id)
+	if others.is_empty():
+		return
+
+	var menu := PIT_STOP_MENU.instantiate()
+	add_child(menu)
+	menu.travel_selected.connect(_on_travel_selected)
+	menu.open(others)
+
+
+func _on_travel_selected(stop: Dictionary) -> void:
+	if _player == null:
+		return
+	# Пока все кофейни в одной сцене — это телепорт. Переход между
+	# сценами появится вместе с настоящими областями.
+	_player.respawn_at(Vector2(float(stop.get("x", 0.0)), float(stop.get("y", 0.0))))
 
 
 func _draw() -> void:

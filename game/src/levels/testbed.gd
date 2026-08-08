@@ -99,13 +99,16 @@ func _on_player_landed(impact: float) -> void:
 # --- Наполнение --------------------------------------------------------
 
 func _populate() -> void:
-	_add_coffee_shop(6, "testbed", "Полигон", "двойной эспрессо")
+	# Две кофейни — иначе не проверить сеть быстрого перемещения.
+	_add_coffee_shop(6, "testbed_start", "Начало полигона", "двойной эспрессо")
+	_add_coffee_shop(122, "testbed_far", "Конец полигона", "раф на кокосовом")
 
 	# Слипстрим — на верхней платформе, куда без него ещё можно долезть.
 	_add_ability(41, 7, Abilities.Kind.SLIPSTREAM)
 	# Остальные разложены по ходу, чтобы гейты можно было проверять подряд.
 	_add_ability(104, 20, Abilities.Kind.PARSELTONGUE)
-	_add_ability(126, 20, Abilities.Kind.WET_TYRES)
+	_add_ability(112, 20, Abilities.Kind.PIT_STOP)
+	_add_ability(128, 20, Abilities.Kind.WET_TYRES)
 	_add_ability(152, 20, Abilities.Kind.STALK)
 
 	# Осколки: два на виду, один в кармане за скрытой стеной.
