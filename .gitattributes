@@ -1,0 +1,23 @@
+* text=auto eol=lf
+
+# Godot и всё текстовое — переводы строк нормализуем.
+*.gd text eol=lf
+*.tscn text eol=lf
+*.tres text eol=lf
+*.godot text eol=lf
+*.cfg text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Бинарники не трогаем.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.svg binary
+*.ogg binary
+*.wav binary
+*.mp3 binary
+*.ttf binary
+*.otf binary
+*.aseprite binary
