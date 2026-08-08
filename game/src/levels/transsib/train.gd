@@ -7,6 +7,7 @@ extends Room
 const RYAZAN_PARK := "res://src/levels/ryazan/park.tscn"
 const SOCHI_PROMENADE := "res://src/levels/sochi/promenade.tscn"
 const MOSCOW_SQUARE := "res://src/levels/moscow/square.tscn"
+const NIGHT_YARD := "res://src/levels/night/yard.tscn"
 
 
 func _define() -> void:
@@ -31,6 +32,7 @@ func _define() -> void:
 	spawn("start", 5, 10)
 	spawn("ryazan", 5, 10)
 	spawn("moscow", 25, 10)
+	spawn("night", 34, 10)
 	spawn("sochi", 38, 10)
 
 	dialogue(15, 10, "transsib_pinky", "Пинки")
@@ -38,4 +40,5 @@ func _define() -> void:
 	# Края вагона — конечные станции, середина — пересадка по нажатию.
 	door(2, 10, RYAZAN_PARK, "exit")
 	door_here(21, 10, MOSCOW_SQUARE, "west", "сойти в Москве")
+	door_here(30, 10, NIGHT_YARD, "west", "сойти в Рязани")
 	door(41, 10, SOCHI_PROMENADE, "west")

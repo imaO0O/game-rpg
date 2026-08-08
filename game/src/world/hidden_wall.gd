@@ -25,6 +25,12 @@ func _ready() -> void:
 	add_child(_shape)
 
 
+## Проявлена ли стена сейчас. Нужно тестам: проверять приватную
+## коллизию снаружи нельзя, а поведение проверять надо.
+func is_revealed() -> bool:
+	return _revealed
+
+
 ## Вызывается игроком через группу при переключении Сталк-режима.
 func set_revealed(active: bool) -> void:
 	if _revealed == active:

@@ -29,6 +29,13 @@ const SUN := Color("d9a854")
 ## Разметка трассы.
 const KERB := Color("b03535")
 
+## Ночная Рязань: та же зелень, что в прологе, но обесцвеченная.
+## Узнать место игрок должен по форме, а не по цвету.
+const NIGHT_BACKGROUND := Color("06080a")
+const NIGHT_BLOCK := Color("141a1c")
+const NIGHT_EDGE := Color("263038")
+const WINDOW_LIGHT := Color("c9a05a")
+
 ## Москва: камень и лампы. Суше Рязани и холоднее Сочи.
 const MOSCOW_BACKGROUND := Color("13151b")
 const MOSCOW_BLOCK := Color("2b2e39")

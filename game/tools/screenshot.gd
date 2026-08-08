@@ -23,8 +23,11 @@ const SCENES := [
 	{"name": "11_moscow_platforms", "path": "res://src/levels/moscow/platforms.tscn"},
 	{"name": "12_moscow_underground", "path": "res://src/levels/moscow/underground.tscn"},
 	{"name": "13_moscow_depot", "path": "res://src/levels/moscow/depot.tscn"},
-	{"name": "14_lair", "path": "res://src/levels/lair.tscn"},
-	{"name": "15_testbed", "path": "res://src/levels/testbed.tscn"},
+	{"name": "14_night_yard", "path": "res://src/levels/night/yard.tscn"},
+	{"name": "15_night_house", "path": "res://src/levels/night/house.tscn"},
+	{"name": "16_night_attic", "path": "res://src/levels/night/attic.tscn"},
+	{"name": "17_lair", "path": "res://src/levels/lair.tscn"},
+	{"name": "18_testbed", "path": "res://src/levels/testbed.tscn"},
 ]
 
 
