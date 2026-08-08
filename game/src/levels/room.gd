@@ -26,11 +26,11 @@ const ATMOSPHERE_SHADER := preload("res://src/shaders/atmosphere.gdshader")
 var background := Palette.BACKGROUND
 var block_color := Palette.BLOCK
 var edge_color := Palette.EDGE
-## Фактура поверхности. Крупность пятен и густота трещин отличают
-## гранит Петербурга от штукатурки Рязани без отдельных текстур.
-var grain_scale := 0.035
-var crack_scale := 0.012
-var crack_strength := 0.35
+## Материал поверхности: ground, stone, brick. Берётся из готового
+## тайлсета, а не рисуется шейдером.
+var surface_kind := "ground"
+## Подкраска тайлов под палитру области. Белый — как в исходнике.
+var surface_tint := Color.WHITE
 
 ## Тип фона за геометрией. Слои силуэтов уезжают с разной скоростью
 ## и выцветают вдаль — без этого сцена читается как плоская.
@@ -401,30 +401,38 @@ func _build_geometry() -> void:
 		collision.position = rect.get_center()
 		body.add_child(collision)
 
-		var fill := Polygon2D.new()
-		fill.color = Color.WHITE
-		fill.polygon = PackedVector2Array([
-			rect.position,
-			Vector2(rect.end.x, rect.position.y),
-			rect.end,
-			Vector2(rect.position.x, rect.end.y),
-		])
-		fill.material = _surface_material(rect)
-		body.add_child(fill)
+		_paint_block(body, rect)
 
 
-## Материал поверхности: фактура, трещины, освещённая кромка сверху
-## и затемнение вглубь. Свой на блок — ему нужно знать, где его верх.
-func _surface_material(rect: Rect2) -> ShaderMaterial:
-	var mat := ShaderMaterial.new()
-	mat.shader = SURFACE_SHADER
-	mat.set_shader_parameter("base_color", block_color)
-	mat.set_shader_parameter("edge_color", edge_color)
-	mat.set_shader_parameter("vein_color", block_color.darkened(0.45))
-	mat.set_shader_parameter("grain_scale", grain_scale)
-	mat.set_shader_parameter("crack_scale", crack_scale)
-	mat.set_shader_parameter("crack_strength", crack_strength)
-	mat.set_shader_parameter("edge_width", 3.0)
-	mat.set_shader_parameter("top_y", rect.position.y)
-	mat.set_shader_parameter("height", rect.size.y)
-	return mat
+## Блок рисуется двумя слоями готовых тайлов: верхняя кромка и тело.
+## Тайлинг привязан к мировым координатам, поэтому текстура не «плывёт»
+## и стыки соседних блоков совпадают.
+func _paint_block(parent: Node, rect: Rect2) -> void:
+	var mats := TileTextures.material_set(surface_kind)
+	var top_height := minf(TILE, rect.size.y)
+
+	if rect.size.y > TILE:
+		var body_rect := Rect2(
+			rect.position + Vector2(0.0, TILE),
+			Vector2(rect.size.x, rect.size.y - TILE)
+		)
+		parent.add_child(_tiled_polygon(body_rect, mats.body))
+
+	var top_rect := Rect2(rect.position, Vector2(rect.size.x, top_height))
+	parent.add_child(_tiled_polygon(top_rect, mats.top))
+
+
+func _tiled_polygon(rect: Rect2, texture: Texture2D) -> Polygon2D:
+	var poly := Polygon2D.new()
+	poly.texture = texture
+	poly.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	poly.modulate = surface_tint
+	poly.polygon = PackedVector2Array([
+		rect.position,
+		Vector2(rect.end.x, rect.position.y),
+		rect.end,
+		Vector2(rect.position.x, rect.end.y),
+	])
+	# UV в мировых координатах: тайл повторяется каждые 16 пикселей мира.
+	poly.uv = poly.polygon
+	return poly
