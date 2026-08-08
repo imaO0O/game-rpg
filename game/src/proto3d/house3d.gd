@@ -124,11 +124,11 @@ func _build_environment() -> void:
 
 
 func _build_lights() -> void:
-	# Лампа в первой комнате — единственный «нормальный» свет в доме.
-	_lamp(Vector3(0.0, 2.3, 0.0), Color(1.0, 0.82, 0.55), 3.5, 7.0)
-	# Дальше — только аварийные отсветы, чтобы было куда идти.
-	_lamp(Vector3(0.0, 2.3, -9.0), Color(0.55, 0.72, 1.0), 1.6, 6.0)
-	_lamp(Vector3(6.0, 2.3, -11.0), Color(1.0, 0.55, 0.35), 2.2, 6.5)
+	# Света в доме мало и он тёплый только в первой комнате. Дальше —
+	# холодные отсветы, обозначающие направление, но не освещающие путь.
+	_lamp(Vector3(0.0, 2.35, 0.6), Color(1.0, 0.78, 0.48), 1.4, 4.5)
+	_lamp(Vector3(0.0, 2.35, -9.0), Color(0.5, 0.68, 1.0), 0.7, 4.0)
+	_lamp(Vector3(6.0, 2.35, -11.0), Color(1.0, 0.5, 0.3), 0.9, 4.5)
 
 
 func _lamp(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
@@ -195,24 +195,54 @@ func _slab(centre: Vector3, size: Vector3, material: Material) -> void:
 	body.add_child(shape)
 
 
-## Мебель и хлам. Пустой интерьер читается как тестовая сцена,
-## сколько на него ни вешай света.
+## Мебель — модели из Blender (tools/blender/furniture.py).
+## Пустой интерьер читается как тестовая сцена, сколько на него
+## ни вешай света, а коробки вместо мебели — как заглушка.
 func _build_props() -> void:
-	# Стол и стулья в первой комнате.
-	_slab(Vector3(1.6, 0.72, 0.4), Vector3(1.2, 0.06, 0.8), _floor_material)
-	for x in [1.1, 2.1]:
-		for z in [0.05, 0.75]:
-			_slab(Vector3(x, 0.36, z), Vector3(0.07, 0.72, 0.07), _dark_material)
+	_prop("table", Vector3(1.6, 0.0, 0.4), 0.0, _floor_material)
+	_prop("chair", Vector3(1.6, 0.0, 1.15), PI, _floor_material)
+	_prop("chair", Vector3(0.75, 0.0, 0.4), -PI * 0.5, _floor_material)
+	_prop("wardrobe", Vector3(-2.0, 0.0, -1.2), PI * 0.5, _floor_material)
+	_prop("floor_lamp", Vector3(-1.9, 0.0, 1.4), 0.0, _dark_material)
 
-	# Шкаф у стены.
-	_slab(Vector3(-2.0, 1.0, -1.2), Vector3(0.55, 2.0, 1.1), _floor_material)
+	_prop("cardboard_box", Vector3(-0.9, 0.0, -5.5), 0.3, _floor_material)
+	_prop("cardboard_box", Vector3(-0.85, 0.34, -5.45), -0.2, _floor_material)
+	_prop("cardboard_box", Vector3(0.95, 0.0, -8.6), 1.1, _floor_material)
+	_prop("cardboard_box", Vector3(5.4, 0.0, -12.2), -0.6, _floor_material)
 
-	# Ящики в коридоре.
-	_slab(Vector3(-0.9, 0.3, -5.5), Vector3(0.6, 0.6, 0.6), _floor_material)
-	_slab(Vector3(-0.9, 0.9, -5.5), Vector3(0.5, 0.5, 0.5), _floor_material)
-	_slab(Vector3(0.9, 0.25, -8.6), Vector3(0.5, 0.5, 0.7), _floor_material)
+	# Двери в проёмах — приоткрытые, чтобы за ними была видна темнота.
+	_prop("door", Vector3(-0.55, 0.0, -2.2), 0.6, _floor_material)
+	_prop("door", Vector3(-0.5, 0.0, -12.0), -0.5, _floor_material)
 
-	# Дверные проёмы обозначены косяками.
+	# Косяки проёмов.
 	for z in [-2.2, -12.0]:
 		_slab(Vector3(-0.95, 1.05, z), Vector3(0.12, 2.1, 0.12), _dark_material)
 		_slab(Vector3(0.95, 1.05, z), Vector3(0.12, 2.1, 0.12), _dark_material)
+
+
+## Ставит модель и вешает на неё материал: из Blender геометрия приходит
+## без материалов намеренно — так один и тот же стул может быть и дубовым,
+## и крашеным.
+func _prop(name: String, pos: Vector3, yaw: float, material: Material) -> void:
+	var path := "res://assets/models/%s.glb" % name
+	if not ResourceLoader.exists(path):
+		push_warning("Нет модели %s" % path)
+		return
+
+	var scene: PackedScene = load(path)
+	var node := scene.instantiate()
+	node.position = pos
+	node.rotation.y = yaw
+	add_child(node)
+
+	_apply_material(node, material)
+
+
+func _apply_material(node: Node, material: Material) -> void:
+	if node is MeshInstance3D:
+		var mesh := node as MeshInstance3D
+		mesh.material_override = material
+		# Мебель должна отбрасывать тень: без этого она «висит» над полом.
+		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	for child in node.get_children():
+		_apply_material(child, material)
