@@ -13,6 +13,11 @@ const PRIVATE_PATH := "res://private/shards.json"
 
 ## Заглушки для полигона — чтобы каркас работал до появления настоящего контента.
 const FALLBACK := {
+	"ryazan_01": {"caption": "Дом", "area": "Рязань"},
+	"ryazan_02": {"caption": "Двор", "area": "Рязань"},
+	"ryazan_03": {"caption": "Парк", "area": "Рязань"},
+	"ryazan_04": {"caption": "За калиткой", "area": "Рязань"},
+	"ryazan_05": {"caption": "Подвал", "area": "Рязань"},
 	"testbed_ladder": {"caption": "На лестнице", "area": "Полигон"},
 	"testbed_gap": {"caption": "Над пропастью", "area": "Полигон"},
 	"testbed_secret": {"caption": "В кармане за стеной", "area": "Полигон"},

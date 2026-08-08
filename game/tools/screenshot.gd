@@ -1,103 +1,104 @@
-## Снимает полигон в нескольких точках и сохраняет PNG в user://shots/.
+## Снимает комнаты целиком и сохраняет PNG в user://shots/.
 ##
-## Нужен, чтобы смотреть на игру, не запуская её руками каждый раз:
-## правка палитры или размеров проверяется одним прогоном.
+## Нужен, чтобы смотреть на планировку, не проходя её руками: видно сразу,
+## где дыра в полу, куда не допрыгнуть и что загорожено.
 ##
 ## Запуск (без --headless, нужен реальный рендер):
 ##   godot --path game res://tools/screenshot.tscn
 extends Node
 
-const TESTBED := preload("res://src/levels/testbed.tscn")
-const LAIR := preload("res://src/levels/lair.tscn")
 const OUT_DIR := "user://shots"
 
-## Куда смотреть и как это назвать.
-const SHOTS := [
-	{"name": "01_start", "x": 96.0, "note": "старт и кофейня"},
-	{"name": "02_ladder", "x": 560.0, "note": "лестница платформ"},
-	{"name": "03_gaps", "x": 1400.0, "note": "пропасти"},
-	{"name": "04_water", "x": 2270.0, "note": "вода"},
-	{"name": "05_door", "x": 2530.0, "note": "змеиная дверь"},
-	{"name": "06_pocket", "x": 2830.0, "note": "скрытая стена и карман"},
+const SCENES := [
+	{"name": "01_ryazan_home", "path": "res://src/levels/ryazan/home.tscn"},
+	{"name": "02_ryazan_yard", "path": "res://src/levels/ryazan/yard.tscn"},
+	{"name": "03_ryazan_park", "path": "res://src/levels/ryazan/park.tscn"},
+	{"name": "04_ryazan_cellar", "path": "res://src/levels/ryazan/cellar.tscn"},
+	{"name": "05_lair", "path": "res://src/levels/lair.tscn"},
+	{"name": "06_testbed", "path": "res://src/levels/testbed.tscn"},
 ]
-
-var _player: Player
-var _camera: GameCamera
 
 
 func _ready() -> void:
-	var level := TESTBED.instantiate()
-	add_child(level)
-	_player = level.get_node("Player")
-	_camera = level.get_node("Camera")
 	_run()
 
 
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
 
-	# Дать уровню построиться и физике встать на место.
-	for i in 20:
-		await get_tree().process_frame
+	Game.reset()
 
-	# Способности нужны, чтобы гейты было видно в открытом состоянии тоже.
-	Game.unlock(Abilities.Kind.SLIPSTREAM)
-
-	for shot: Dictionary in SHOTS:
+	for shot: Dictionary in SCENES:
+		# Логово имеет смысл снимать только с чем-то собранным — но
+		# собирать до съёмки комнат нельзя, иначе осколки в них не появятся.
+		if shot.name.ends_with("lair"):
+			_fill_state_for_lair()
 		await _capture(shot)
-
-	await _capture_lair()
 
 	print("папка: ", ProjectSettings.globalize_path(OUT_DIR))
 	get_tree().quit(0)
 
 
-## Логово снимаем отдельно: это другая сцена и другое состояние —
-## часть осколков найдена, часть ещё нет.
-func _capture_lair() -> void:
-	_player.get_parent().queue_free()
-
-	Game.collect_shard("testbed_ladder")
-	Game.collect_shard("testbed_gap")
-	Game.register_stop("testbed_start", {"city": "Рязань", "drink": "раф"})
-	Game.register_stop("testbed_far", {"city": "Сочи", "drink": "эспрессо"})
-
-	var lair := LAIR.instantiate()
-	add_child(lair)
-
-	for i in 40:
-		await get_tree().process_frame
-
-	# Центр комнаты, а не центр мира: иначе половину кадра занимает пустота.
-	var camera: GameCamera = lair.get_node("Camera")
-	camera.target = null
-	camera.global_position = Vector2(352.0, 136.0)
-
-	for i in 20:
-		await get_tree().process_frame
-
-	await RenderingServer.frame_post_draw
-
-	var image := get_viewport().get_texture().get_image()
-	if image.save_png("%s/07_lair.png" % OUT_DIR) != OK:
-		push_error("Не удалось сохранить снимок Логова")
-		return
-	print("снято: 07_lair — Логово")
+func _fill_state_for_lair() -> void:
+	Game.collect_shard("ryazan_01")
+	Game.collect_shard("ryazan_03")
+	Game.register_stop("ryazan_yard", {"city": "Рязань", "drink": "капучино"})
 
 
 func _capture(shot: Dictionary) -> void:
-	_player.respawn_at(Vector2(shot.x, 320.0))
-	_camera.global_position = _player.global_position
+	var scene: PackedScene = load(shot.path)
+	var level := scene.instantiate()
+	add_child(level)
 
-	# Камера сглаживает движение — даём ей доехать и объектам отрисоваться.
-	for i in 30:
+	# Даём комнате построиться и физике поставить игрока на пол.
+	for i in 25:
+		await get_tree().process_frame
+
+	_frame_whole_room(level)
+
+	for i in 10:
 		await get_tree().process_frame
 
 	await RenderingServer.frame_post_draw
 
 	var image := get_viewport().get_texture().get_image()
 	var path := "%s/%s.png" % [OUT_DIR, shot.name]
-	if image.save_png(path) != OK:
+	if image.save_png(path) == OK:
+		print("снято: ", shot.name)
+	else:
 		push_error("Не удалось сохранить %s" % path)
+
+	level.queue_free()
+	await get_tree().process_frame
+
+
+## Отводим камеру так, чтобы комната влезла в кадр целиком.
+func _frame_whole_room(level: Node) -> void:
+	var camera := level.get_node_or_null("Camera") as GameCamera
+	var area := Rect2(Vector2.ZERO, Vector2(1024.0, 640.0))
+
+	if camera == null:
+		# Room создаёт камеру сам, без имени узла в сцене.
+		for child in level.get_children():
+			if child is GameCamera:
+				camera = child
+				break
+
+	if camera == null:
 		return
-	print("снято: %s — %s" % [shot.name, shot.note])
+
+	if level is Room:
+		area = (level as Room).world_bounds()
+
+	# target отключаем: иначе камера тут же уедет обратно к игроку,
+	# а зум вернётся к единице.
+	camera.target = null
+	camera.limit_left = -100000
+	camera.limit_top = -100000
+	camera.limit_right = 100000
+	camera.limit_bottom = 100000
+	camera.global_position = area.get_center()
+	camera.offset = Vector2.ZERO
+
+	var fit := minf(640.0 / area.size.x, 360.0 / area.size.y) * 0.96
+	camera.zoom = Vector2(fit, fit)

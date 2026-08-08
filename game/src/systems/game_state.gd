@@ -29,6 +29,10 @@ var checkpoint_position := Vector2.ZERO
 
 var playtime := 0.0
 
+## Куда встать в следующей комнате. Живёт только между сменами сцен
+## и потому не сохраняется.
+var pending_spawn := ""
+
 
 func _process(delta: float) -> void:
 	playtime += delta
