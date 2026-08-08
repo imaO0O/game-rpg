@@ -18,7 +18,7 @@ signal stalk_changed(active: bool)
 
 @export var config: MovementConfig
 
-@onready var visual: PlayerVisual = $Visual
+@onready var visual: PlayerSprite = $Visual
 @onready var caffeine: Caffeine = $Caffeine
 @onready var dust: CPUParticles2D = $Dust
 
