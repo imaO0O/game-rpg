@@ -18,6 +18,10 @@ const ROOMS := [
 	"res://src/levels/sochi/straight.tscn",
 	"res://src/levels/sochi/turn3.tscn",
 	"res://src/levels/sochi/paddock.tscn",
+	"res://src/levels/moscow/square.tscn",
+	"res://src/levels/moscow/platforms.tscn",
+	"res://src/levels/moscow/underground.tscn",
+	"res://src/levels/moscow/depot.tscn",
 ]
 
 var _failures: PackedStringArray = []

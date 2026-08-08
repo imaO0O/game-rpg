@@ -28,3 +28,10 @@ const SUN := Color("d9a854")
 
 ## Разметка трассы.
 const KERB := Color("b03535")
+
+## Москва: камень и лампы. Суше Рязани и холоднее Сочи.
+const MOSCOW_BACKGROUND := Color("13151b")
+const MOSCOW_BLOCK := Color("2b2e39")
+const MOSCOW_EDGE := Color("4d5464")
+const LAMP := Color("d8b878")
+const RAIL := Color("3a3f4d")
