@@ -19,6 +19,13 @@ extends Camera2D
 @export var look_ahead_smooth := 3.0
 
 @export_group("Обзор")
+## Базовый зум. Мир строится в логических единицах по 16 на тайл, а рендер
+## идёт в 1920×1080 — множитель приводит одно к другому. Геометрия векторная,
+## поэтому в высоком разрешении она остаётся чёткой, а не растянутой.
+## Пять — это примерно двадцать четыре тайла по ширине кадра: столько же
+## показывают метроидвании, на которые мы равняемся. При трёх фигура
+## занимала три процента высоты экрана и терялась.
+@export var zoom_base := 5.0
 ## Насколько расширяется кадр на полной скорости (доля зума).
 @export var zoom_at_speed := 0.08
 ## Скорость, считающаяся максимальной. Держать в согласии с MovementConfig.top_speed.
@@ -34,6 +41,7 @@ var _shake := 0.0
 
 
 func _ready() -> void:
+	zoom = Vector2(zoom_base, zoom_base)
 	if target != null:
 		_center = target.global_position
 		global_position = _center
@@ -72,7 +80,7 @@ func _update_position(delta: float) -> void:
 func _update_zoom(delta: float) -> void:
 	# Меньший зум = шире кадр. На скорости нужно видеть дальше.
 	var ratio := clampf(absf(_target_speed()) / speed_reference, 0.0, 1.0)
-	var want := 1.0 - zoom_at_speed * ratio
+	var want := zoom_base * (1.0 - zoom_at_speed * ratio)
 	zoom = zoom.lerp(Vector2(want, want), 1.0 - exp(-3.0 * delta))
 
 

@@ -16,6 +16,10 @@ func _define() -> void:
 	block_color = Palette.NIGHT_BLOCK
 	edge_color = Palette.NIGHT_EDGE
 
+	# Самое тёмное место в игре — ровно там, где выдают зрение сквозь стены.
+	ambient = Color(0.16, 0.18, 0.24)
+	player_light = 85.0
+
 	bounds(0, 0, 32, 16)
 
 	block(0, 12, 32, 4)
@@ -33,8 +37,8 @@ func _define() -> void:
 	block(9, 9, 1, 3)
 	block(21, 9, 1, 3)
 
-	# Слуховое окно.
-	decor(14, 8, 3, 3, Palette.WINDOW_LIGHT)
+	# Слуховое окно — единственный источник света на чердаке.
+	window(14, 8, 3, 3, Palette.WINDOW_LIGHT, 1.0)
 
 	spawn("start", 4, 12)
 

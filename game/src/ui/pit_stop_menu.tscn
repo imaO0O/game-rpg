@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://src/ui/pit_stop_menu.gd" id="1_pitstop"]
 
 [node name="PitStopMenu" type="CanvasLayer"]
-layer = 2
+layer = 3
 script = ExtResource("1_pitstop")
 
 [node name="Root" type="Control" parent="."]

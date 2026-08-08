@@ -5,7 +5,7 @@
 ## всплывающие сообщения о событиях.
 extends CanvasLayer
 
-const BAR_WIDTH := 120.0
+const BAR_WIDTH := 360.0
 const TOAST_TIME := 2.8
 const TOAST_FADE := 0.6
 

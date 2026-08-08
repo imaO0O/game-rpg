@@ -34,6 +34,16 @@ const SCENES := [
 	{"name": "22_testbed", "path": "res://src/levels/testbed.tscn"},
 ]
 
+## Кадры с игровым зумом — то, что видит игрок.
+const GAMEPLAY := [
+	{"name": "g1_ryazan_yard", "path": "res://src/levels/ryazan/yard.tscn", "x": 320.0},
+	{"name": "g2_sochi_straight", "path": "res://src/levels/sochi/straight.tscn", "x": 400.0},
+	{"name": "g3_moscow_square", "path": "res://src/levels/moscow/square.tscn", "x": 380.0},
+	{"name": "g4_night_house", "path": "res://src/levels/night/house.tscn", "x": 200.0},
+	{"name": "g5_spb_embankment", "path": "res://src/levels/spb/embankment.tscn", "x": 300.0},
+	{"name": "g6_night_yard", "path": "res://src/levels/night/yard.tscn", "x": 420.0},
+]
+
 
 func _ready() -> void:
 	_run()
@@ -51,6 +61,11 @@ func _run() -> void:
 			_fill_state_for_lair()
 		await _capture(shot)
 
+	# Обзорные кадры показывают планировку, но не то, как игра выглядит
+	# в руках. Для этого нужен игровой зум и камера на игроке.
+	for shot: Dictionary in GAMEPLAY:
+		await _capture(shot, true)
+
 	print("папка: ", ProjectSettings.globalize_path(OUT_DIR))
 	get_tree().quit(0)
 
@@ -61,7 +76,7 @@ func _fill_state_for_lair() -> void:
 	Game.register_stop("ryazan_yard", {"city": "Рязань", "drink": "капучино"})
 
 
-func _capture(shot: Dictionary) -> void:
+func _capture(shot: Dictionary, gameplay := false) -> void:
 	var scene: PackedScene = load(shot.path)
 	var level := scene.instantiate()
 	add_child(level)
@@ -70,7 +85,10 @@ func _capture(shot: Dictionary) -> void:
 	for i in 25:
 		await get_tree().process_frame
 
-	_frame_whole_room(level)
+	if gameplay:
+		_frame_gameplay(level, shot.get("x", 0.0))
+	else:
+		_frame_whole_room(level)
 
 	for i in 10:
 		await get_tree().process_frame
@@ -86,6 +104,20 @@ func _capture(shot: Dictionary) -> void:
 
 	level.queue_free()
 	await get_tree().process_frame
+
+
+## Кадр как в игре: обычный зум, камера на игроке.
+func _frame_gameplay(level: Node, x: float) -> void:
+	if not level is Room:
+		return
+	var room := level as Room
+	if room.player == null or room.camera == null:
+		return
+
+	if x > 0.0:
+		room.player.global_position.x = x
+	room.camera.global_position = room.player.global_position
+	room.camera.zoom = Vector2(room.camera.zoom_base, room.camera.zoom_base)
 
 
 ## Отводим камеру так, чтобы комната влезла в кадр целиком.
@@ -116,5 +148,5 @@ func _frame_whole_room(level: Node) -> void:
 	camera.global_position = area.get_center()
 	camera.offset = Vector2.ZERO
 
-	var fit := minf(640.0 / area.size.x, 360.0 / area.size.y) * 0.96
+	var fit := minf(1920.0 / area.size.x, 1080.0 / area.size.y) * 0.96
 	camera.zoom = Vector2(fit, fit)

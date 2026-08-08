@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://src/player/player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://src/player/default_movement.tres" id="2_config"]
 [ext_resource type="Script" path="res://src/systems/caffeine.gd" id="3_caffeine"]
+[ext_resource type="Script" path="res://src/player/player_visual.gd" id="4_visual"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(12, 20)
@@ -17,10 +18,7 @@ position = Vector2(0, -10)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="Visual" type="Node2D" parent="."]
-
-[node name="Body" type="Polygon2D" parent="Visual"]
-color = Color(0.862745, 0, 0, 1)
-polygon = PackedVector2Array(-6, -20, 6, -20, 6, 0, -6, 0)
+script = ExtResource("4_visual")
 
 [node name="Dust" type="CPUParticles2D" parent="."]
 emitting = false

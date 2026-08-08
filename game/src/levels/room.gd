@@ -14,6 +14,8 @@ const TILE := 16.0
 
 const PLAYER_SCENE := preload("res://src/player/player.tscn")
 const HUD_SCENE := preload("res://src/ui/hud.tscn")
+const SURFACE_SHADER := preload("res://src/shaders/surface.gdshader")
+const ATMOSPHERE_SHADER := preload("res://src/shaders/atmosphere.gdshader")
 
 ## Идентификатор комнаты. Используется в флагах и отладке.
 @export var room_id := ""
@@ -24,9 +26,30 @@ const HUD_SCENE := preload("res://src/ui/hud.tscn")
 var background := Palette.BACKGROUND
 var block_color := Palette.BLOCK
 var edge_color := Palette.EDGE
+## Фактура поверхности. Крупность пятен и густота трещин отличают
+## гранит Петербурга от штукатурки Рязани без отдельных текстур.
+var grain_scale := 0.035
+var crack_scale := 0.012
+var crack_strength := 0.35
+
+## Тип фона за геометрией. Слои силуэтов уезжают с разной скоростью
+## и выцветают вдаль — без этого сцена читается как плоская.
+var backdrop: Backdrop.Kind = Backdrop.Kind.CITY
+## Готовые слои-картинки вместо процедурных силуэтов. Если задано,
+## используется вместо `backdrop`.
+var backdrop_layers: Array = []
+## Плотность атмосферной дымки поверх кадра.
+var haze := 0.12
 ## Плотность дождя. Ноль — сухо. Дождь висит на камере, поэтому идёт
 ## по всему кадру, а не в одной точке комнаты.
 var rain_amount := 0
+## Общий свет комнаты. Белый — без затемнения, тёмный — ночь.
+## Именно он превращает одну и ту же геометрию в разные места.
+var ambient := Color.WHITE
+## Радиус свечения вокруг игрока. Нужен там, где темно настолько,
+## что без него не видно, куда идёшь.
+var player_light := 0.0
+var player_light_color := Color(1.0, 0.94, 0.85)
 
 var player: Player
 var camera: GameCamera
@@ -50,10 +73,13 @@ func _ready() -> void:
 	# Цвет фона комната может переопределить: у Сочи он теплее, чем у Рязани.
 	RenderingServer.set_default_clear_color(background)
 
+	_setup_backdrop()
 	_build_geometry()
+	_setup_ambient()
 	_spawn_player()
 	_setup_camera()
 	_setup_hud()
+	_setup_atmosphere()
 
 	_place_player()
 	_announce()
@@ -87,6 +113,22 @@ func bounds(x: int, y: int, w: int, h: int) -> void:
 ## Именованная точка входа. `name` совпадает с тем, что указывает дверь.
 func spawn(name: String, x: int, y: int) -> void:
 	_spawns[name] = Vector2(x * TILE, y * TILE)
+
+
+## Источник света: фонарь, лампа, витрина.
+func lamp(x: int, y: int, color: Color, energy := 1.0, radius := 90.0) -> void:
+	var light := Lighting.make_point(color, energy, radius)
+	light.position = Vector2(x * TILE, y * TILE)
+	add_child(light)
+
+
+## Свет из окна, падающий вниз. Ставится на само окно.
+func window(x: int, y: int, w: int, h: int, color: Color, energy := 0.9) -> void:
+	decor(x, y, w, h, color)
+
+	var light := Lighting.make_beam(color, energy, w * TILE * 3.0, h * TILE * 8.0)
+	light.position = Vector2((float(x) + w * 0.5) * TILE, (y + h) * TILE)
+	add_child(light)
 
 
 ## Декорация без коллизии: окна, море, разметка. Рисуется под геометрией.
@@ -188,10 +230,70 @@ func door_here(x: int, y: int, to_scene: String, to_spawn: String, label: String
 
 # --- Сборка ------------------------------------------------------------
 
+## Слои силуэтов за геометрией. Семя берём из имени комнаты: один и тот же
+## двор всегда выглядит одинаково, а соседний — иначе.
+func _setup_backdrop() -> void:
+	var world := world_bounds()
+	var view := Backdrop.new()
+	add_child(view)
+
+	if not backdrop_layers.is_empty():
+		view.build_textured(backdrop_layers, maxf(world.size.x, 1600.0))
+		return
+
+	view.build(
+		backdrop,
+		# Темнее игровой геометрии: иначе фон читается как площадка,
+		# по которой можно бежать.
+		block_color.darkened(0.35),
+		background,
+		world.end.y - 4.0 * TILE,
+		maxf(world.size.x, 1600.0),
+		int(hash(room_id)) & 0xffff
+	)
+
+
+## Виньетка, зерно и дымка поверх всего. Отдельным слоем, чтобы
+## не зависеть от того, что нарисовано под ним.
+func _setup_atmosphere() -> void:
+	var mat := ShaderMaterial.new()
+	mat.shader = ATMOSPHERE_SHADER
+	mat.set_shader_parameter("haze_color", background.lightened(0.12))
+	mat.set_shader_parameter("haze_strength", haze)
+
+	var overlay := ColorRect.new()
+	overlay.color = Color.WHITE
+	overlay.material = mat
+	overlay.anchor_right = 1.0
+	overlay.anchor_bottom = 1.0
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var layer := CanvasLayer.new()
+	# Выше игры, ниже интерфейса.
+	layer.layer = 1
+	layer.add_child(overlay)
+	add_child(layer)
+
+
+## Затемнение всей комнаты. Источники света работают только вместе с ним:
+## без затемнения осветлять нечего.
+func _setup_ambient() -> void:
+	if ambient == Color.WHITE:
+		return
+	var modulate_node := CanvasModulate.new()
+	modulate_node.color = ambient
+	add_child(modulate_node)
+
+
 func _spawn_player() -> void:
 	player = PLAYER_SCENE.instantiate()
 	player.z_index = 10
 	add_child(player)
+
+	if player_light > 0.0:
+		var light := Lighting.make_point(player_light_color, 0.9, player_light)
+		light.position = Vector2(0.0, -10.0)
+		player.add_child(light)
 
 
 func _setup_camera() -> void:
@@ -235,6 +337,8 @@ func _setup_rain() -> void:
 
 func _setup_hud() -> void:
 	hud = HUD_SCENE.instantiate()
+	# Выше атмосферного слоя: виньетка не должна затемнять интерфейс.
+	hud.layer = 2
 	add_child(hud)
 	hud.player = player
 
@@ -298,22 +402,29 @@ func _build_geometry() -> void:
 		body.add_child(collision)
 
 		var fill := Polygon2D.new()
-		fill.color = block_color
+		fill.color = Color.WHITE
 		fill.polygon = PackedVector2Array([
 			rect.position,
 			Vector2(rect.end.x, rect.position.y),
 			rect.end,
 			Vector2(rect.position.x, rect.end.y),
 		])
-
-		# Светлая кромка сверху — без неё блоки сливаются в кашу.
-		var edge := Polygon2D.new()
-		edge.color = edge_color
-		edge.polygon = PackedVector2Array([
-			rect.position,
-			Vector2(rect.end.x, rect.position.y),
-			Vector2(rect.end.x, rect.position.y + 2.0),
-			Vector2(rect.position.x, rect.position.y + 2.0),
-		])
-		fill.add_child(edge)
+		fill.material = _surface_material(rect)
 		body.add_child(fill)
+
+
+## Материал поверхности: фактура, трещины, освещённая кромка сверху
+## и затемнение вглубь. Свой на блок — ему нужно знать, где его верх.
+func _surface_material(rect: Rect2) -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = SURFACE_SHADER
+	mat.set_shader_parameter("base_color", block_color)
+	mat.set_shader_parameter("edge_color", edge_color)
+	mat.set_shader_parameter("vein_color", block_color.darkened(0.45))
+	mat.set_shader_parameter("grain_scale", grain_scale)
+	mat.set_shader_parameter("crack_scale", crack_scale)
+	mat.set_shader_parameter("crack_strength", crack_strength)
+	mat.set_shader_parameter("edge_width", 3.0)
+	mat.set_shader_parameter("top_y", rect.position.y)
+	mat.set_shader_parameter("height", rect.size.y)
+	return mat

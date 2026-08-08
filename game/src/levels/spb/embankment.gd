@@ -16,7 +16,11 @@ func _define() -> void:
 	background = Palette.SPB_BACKGROUND
 	block_color = Palette.SPB_BLOCK
 	edge_color = Palette.SPB_EDGE
+	backdrop = Backdrop.Kind.CANAL
 	rain_amount = 90
+	# В дождь воздух плотнее — дальние фасады тонут в мороси.
+	haze = 0.26
+	ambient = Color(0.62, 0.68, 0.76)
 
 	bounds(0, 0, 54, 24)
 

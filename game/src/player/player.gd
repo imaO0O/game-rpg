@@ -18,7 +18,7 @@ signal stalk_changed(active: bool)
 
 @export var config: MovementConfig
 
-@onready var visual: Node2D = $Visual
+@onready var visual: PlayerVisual = $Visual
 @onready var caffeine: Caffeine = $Caffeine
 @onready var dust: CPUParticles2D = $Dust
 
@@ -338,3 +338,6 @@ func respawn_at(point: Vector2) -> void:
 	_slipstream_ready = true
 	_water_zones = 0
 	visual.scale = Vector2.ONE
+	# Волосы и шарф тянутся за головой — после телепорта их надо
+	# посадить на место, иначе они летят через всю комнату.
+	visual.snap()

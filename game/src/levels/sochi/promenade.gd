@@ -15,6 +15,8 @@ func _define() -> void:
 	background = Palette.SOCHI_BACKGROUND
 	block_color = Palette.SOCHI_BLOCK
 	edge_color = Palette.SOCHI_EDGE
+	backdrop = Backdrop.Kind.SEA
+	haze = 0.16
 
 	bounds(0, 0, 52, 24)
 

@@ -20,6 +20,12 @@ func _define() -> void:
 	block_color = Palette.NIGHT_BLOCK
 	edge_color = Palette.NIGHT_EDGE
 
+	# В доме темнее, чем во дворе: видно на шаг вперёд, не дальше.
+	ambient = Color(0.20, 0.22, 0.28)
+	player_light = 95.0
+	backdrop = Backdrop.Kind.INDOOR
+	haze = 0.2
+
 	bounds(0, 0, 40, 30)
 
 	block(0, 26, 40, 4)
@@ -43,8 +49,8 @@ func _define() -> void:
 	block(10, 11, 3, 1)
 
 	# Тусклый свет из окон — единственное освещение.
-	decor(6, 22, 2, 2, Palette.WINDOW_LIGHT)
-	decor(34, 10, 2, 2, Palette.WINDOW_LIGHT)
+	window(6, 22, 2, 2, Palette.WINDOW_LIGHT, 0.8)
+	window(34, 10, 2, 2, Palette.WINDOW_LIGHT, 0.8)
 
 	spawn("start", 4, 26)
 	spawn("west", 4, 26)
