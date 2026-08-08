@@ -18,6 +18,7 @@ func _ready() -> void:
 	_test_flags()
 	_test_stops()
 	_test_save_load()
+	_test_dialogue()
 	_finish()
 
 
@@ -78,6 +79,17 @@ func _test_save_load() -> void:
 		Game.checkpoint_position.is_equal_approx(Vector2(128.0, 320.0)),
 		"координаты точки сохранения не поехали"
 	)
+
+
+## Диалоги должны деградировать корректно: без private/ игра остаётся
+## проходимой, а личные реплики никогда не оказываются в репозитории.
+func _test_dialogue() -> void:
+	_check(get_node_or_null("/root/Dialogic") != null, "Dialogic подключён")
+	_check(
+		Dialogue.path_for("intro").begins_with("res://private/"),
+		"таймлайны ищутся в private/, а не в репозитории"
+	)
+	_check(not Dialogue.exists("такого_таймлайна_нет"), "отсутствующий таймлайн не находится")
 
 
 func _finish() -> void:

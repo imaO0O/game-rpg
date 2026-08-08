@@ -28,6 +28,9 @@ var momentum := 0.0
 var facing := 1
 ## Сталк-режим включён — секреты проявлены.
 var stalk_active := false
+## Управление отключено — идёт диалог. Инерция при этом сохраняется:
+## персонаж дотормаживает, а не встаёт как вкопанный.
+var input_locked := false
 
 var _coyote := 0.0
 var _buffer := 0.0
@@ -53,15 +56,16 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var input_dir := Input.get_axis("move_left", "move_right")
+	var input_dir := 0.0 if input_locked else Input.get_axis("move_left", "move_right")
 
 	_update_timers(delta)
 	_update_stalk()
 	_update_momentum(delta, input_dir)
 	_apply_gravity(delta)
 	_apply_horizontal(delta, input_dir)
-	_handle_jump()
-	_handle_boost()
+	if not input_locked:
+		_handle_jump()
+		_handle_boost()
 
 	_prev_velocity_y = velocity.y
 	move_and_slide()
@@ -96,7 +100,9 @@ func _update_timers(delta: float) -> void:
 
 ## Сталк-режим просто переключает видимость всего, что от него прячется.
 func _update_stalk() -> void:
-	var want := Game.has_ability(Abilities.Kind.STALK) and Input.is_action_pressed("stalk")
+	var want := not input_locked \
+		and Game.has_ability(Abilities.Kind.STALK) \
+		and Input.is_action_pressed("stalk")
 	if want == stalk_active:
 		return
 	stalk_active = want

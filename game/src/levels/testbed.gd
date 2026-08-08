@@ -125,6 +125,12 @@ func _populate() -> void:
 	# Скрытая стена — вход в карман с осколком.
 	_add_hidden_wall(175)
 
+	# Точки диалога: одна срабатывает сама, вторая по нажатию.
+	# Автостарт держим в стороне от прямой разгона — он забирает управление,
+	# и на прямой это ломает и разгон, и замеры.
+	_add_dialogue(145, "testbed_intro", "Пинки", true)
+	_add_dialogue(118, "testbed_pitwall", "Пит-волл", false)
+
 
 func _add_coffee_shop(tile_x: int, id: String, city: String, drink: String) -> void:
 	var shop := CoffeeShop.new()
@@ -164,6 +170,15 @@ func _add_snake_door(tile_x: int, id: String) -> void:
 	door.size = Vector2(14.0, 80.0)
 	door.position = Vector2(tile_x * TILE, FLOOR_Y)
 	add_child(door)
+
+
+func _add_dialogue(tile_x: int, timeline: String, label: String, auto: bool) -> void:
+	var trigger := DialogueTrigger.new()
+	trigger.timeline_name = timeline
+	trigger.label = label
+	trigger.auto_start = auto
+	trigger.position = Vector2(tile_x * TILE, FLOOR_Y)
+	add_child(trigger)
 
 
 func _add_hidden_wall(tile_x: int) -> void:

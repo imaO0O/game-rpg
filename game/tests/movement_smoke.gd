@@ -28,6 +28,12 @@ func _ready() -> void:
 	add_child(level)
 	_player = level.get_node("Player")
 
+	# Диалоги забирают управление — для замеров движения это шум.
+	# Проверяются они отдельно.
+	for node in level.get_children():
+		if node is DialogueTrigger:
+			node.queue_free()
+
 
 func _physics_process(delta: float) -> void:
 	_timer += delta
@@ -41,7 +47,8 @@ func _physics_process(delta: float) -> void:
 		5: _phase_land_before_water()
 		6: _phase_water_without_ability()
 		7: _phase_water_with_ability()
-		8: _finish()
+		8: _phase_input_lock()
+		9: _finish()
 
 
 ## Игрок должен спокойно стоять на полу, а не проваливаться и не висеть.
@@ -162,8 +169,26 @@ func _phase_water_with_ability() -> void:
 		"с Мокрой резиной в воде скорость восстановилась (vx=%.0f)" % _player.velocity.x
 	)
 
-	Input.action_release("move_right")
+	# Дальше проверяем блокировку ввода — кнопку намеренно не отпускаем.
+	_player.exit_water()
+	_player.input_locked = true
 	_next(8)
+
+
+## Во время диалога управление не работает, но инерция сохраняется:
+## персонаж дотормаживает, а не встаёт как вкопанный.
+func _phase_input_lock() -> void:
+	if _timer < 0.6:
+		return
+	_check(
+		absf(_player.velocity.x) < 20.0,
+		"на заблокированном вводе игрок останавливается (vx=%.0f)" % _player.velocity.x
+	)
+	_check(not _player.stalk_active, "сталк-режим на заблокированном вводе не включается")
+
+	_player.input_locked = false
+	Input.action_release("move_right")
+	_next(9)
 
 
 func _finish() -> void:

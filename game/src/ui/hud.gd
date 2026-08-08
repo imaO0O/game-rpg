@@ -22,6 +22,9 @@ var _toast_time := 0.0
 
 
 func _ready() -> void:
+	# По группе HUD находят те, кому нужно что-то сказать игроку.
+	add_to_group("hud")
+
 	Game.ability_unlocked.connect(_on_ability_unlocked)
 	Game.shard_collected.connect(_on_shard_collected)
 	Game.game_saved.connect(_on_game_saved)
