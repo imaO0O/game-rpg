@@ -156,10 +156,11 @@ func _add_shard(tile_x: int, tile_y: int, id: String, caption: String) -> void:
 	add_child(shard)
 
 
+## Зона от тайла tile_x вправо — так же, как в Room.water().
 func _add_water(tile_x: int, tile_y: int, tiles_wide: int) -> void:
 	var water := WaterZone.new()
 	water.size = Vector2(tiles_wide * TILE, 40.0)
-	water.position = Vector2(tile_x * TILE, tile_y * TILE)
+	water.position = Vector2((float(tile_x) + tiles_wide * 0.5) * TILE, tile_y * TILE)
 	add_child(water)
 
 

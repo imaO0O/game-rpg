@@ -70,6 +70,9 @@ extends Resource
 @export var water_friction_mult := 0.25
 ## И медленнее: доля от максимальной скорости.
 @export var water_speed_mult := 0.7
+## Во сколько раз быстрее теряется разгон на мокром. Без этого игрок
+## влетает в воду разогнанным и проскакивает её, не заметив гейта.
+@export var water_momentum_decay_mult := 3.0
 
 @export_group("Squash & stretch")
 @export var squash_jump := Vector2(0.78, 1.28)

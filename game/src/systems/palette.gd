@@ -29,6 +29,13 @@ const SUN := Color("d9a854")
 ## Разметка трассы.
 const KERB := Color("b03535")
 
+## Петербург: гранит, вода и дождь. Самая холодная палитра в игре.
+const SPB_BACKGROUND := Color("0b1117")
+const SPB_BLOCK := Color("212a32")
+const SPB_EDGE := Color("47555f")
+const SPB_WATER := Color("18333f")
+const RAIN := Color("8fa8b8")
+
 ## Ночная Рязань: та же зелень, что в прологе, но обесцвеченная.
 ## Узнать место игрок должен по форме, а не по цвету.
 const NIGHT_BACKGROUND := Color("06080a")

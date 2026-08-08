@@ -24,6 +24,9 @@ const HUD_SCENE := preload("res://src/ui/hud.tscn")
 var background := Palette.BACKGROUND
 var block_color := Palette.BLOCK
 var edge_color := Palette.EDGE
+## Плотность дождя. Ноль — сухо. Дождь висит на камере, поэтому идёт
+## по всему кадру, а не в одной точке комнаты.
+var rain_amount := 0
 
 var player: Player
 var camera: GameCamera
@@ -141,10 +144,13 @@ func hidden_wall(x: int, y: int, height := 80.0) -> void:
 	add_child(node)
 
 
+## Водная зона от тайла `x` вправо на `tiles_wide` — как block() и decor().
+## Сама зона центрируется по своей позиции, поэтому сдвигаем на половину:
+## иначе вода стоит не там, где нарисована, и гейт срабатывает не в том месте.
 func water(x: int, y: int, tiles_wide: int, height := 40.0) -> void:
 	var node := WaterZone.new()
 	node.size = Vector2(tiles_wide * TILE, height)
-	node.position = Vector2(x * TILE, y * TILE)
+	node.position = Vector2((float(x) + tiles_wide * 0.5) * TILE, y * TILE)
 	add_child(node)
 
 
@@ -199,6 +205,32 @@ func _setup_camera() -> void:
 	camera.limit_top = int(_bounds.position.y * TILE)
 	camera.limit_right = int(_bounds.end.x * TILE)
 	camera.limit_bottom = int(_bounds.end.y * TILE)
+
+	if rain_amount > 0:
+		_setup_rain()
+
+
+## Дождь — ребёнок камеры: так он всегда в кадре и не требует
+## засевать частицами всю комнату.
+func _setup_rain() -> void:
+	var drops := CPUParticles2D.new()
+	drops.amount = rain_amount
+	drops.lifetime = 1.2
+	drops.preprocess = 1.2
+	drops.local_coords = false
+	drops.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	drops.emission_rect_extents = Vector2(400.0, 8.0)
+	drops.position = Vector2(0.0, -220.0)
+	drops.direction = Vector2(-0.25, 1.0)
+	drops.spread = 4.0
+	drops.gravity = Vector2(0.0, 260.0)
+	drops.initial_velocity_min = 320.0
+	drops.initial_velocity_max = 420.0
+	drops.scale_amount_min = 0.6
+	drops.scale_amount_max = 1.4
+	drops.color = Color(Palette.RAIN, 0.35)
+	drops.z_index = 20
+	camera.add_child(drops)
 
 
 func _setup_hud() -> void:

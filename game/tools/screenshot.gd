@@ -26,8 +26,12 @@ const SCENES := [
 	{"name": "14_night_yard", "path": "res://src/levels/night/yard.tscn"},
 	{"name": "15_night_house", "path": "res://src/levels/night/house.tscn"},
 	{"name": "16_night_attic", "path": "res://src/levels/night/attic.tscn"},
-	{"name": "17_lair", "path": "res://src/levels/lair.tscn"},
-	{"name": "18_testbed", "path": "res://src/levels/testbed.tscn"},
+	{"name": "17_spb_embankment", "path": "res://src/levels/spb/embankment.tscn"},
+	{"name": "18_spb_canals", "path": "res://src/levels/spb/canals.tscn"},
+	{"name": "19_spb_roofs", "path": "res://src/levels/spb/roofs.tscn"},
+	{"name": "20_spb_courtyard", "path": "res://src/levels/spb/courtyard.tscn"},
+	{"name": "21_lair", "path": "res://src/levels/lair.tscn"},
+	{"name": "22_testbed", "path": "res://src/levels/testbed.tscn"},
 ]
 
 

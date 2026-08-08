@@ -123,8 +123,12 @@ func _update_momentum(delta: float, input_dir: float) -> void:
 		_break_momentum(config.momentum_turn_penalty, "разворот")
 	_last_dir = dir
 
-	# В воде без Мокрой резины разгон не набирается вовсе — в этом весь гейт.
+	# В воде без Мокрой резины разгон не просто не растёт, а теряется:
+	# «скользко» означает, что линию не удержать, а не что её нельзя набрать.
+	# Иначе игрок влетает в воду разогнанным и проскакивает её насквозь.
 	if _is_slipping():
+		var loss := config.momentum_decay * config.water_momentum_decay_mult * delta
+		momentum = maxf(0.0, momentum - loss)
 		return
 
 	momentum = minf(1.0, momentum + config.momentum_gain * delta)
