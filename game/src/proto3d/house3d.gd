@@ -674,6 +674,12 @@ func _build_scares() -> void:
 	strategy.position = Vector3(0.0, 1.5, -10.2)
 	add_child(strategy)
 
+	# Пинки в дальней комнате: там игрок уже расслабился и оглядывается,
+	# а не идёт напряжённо вперёд.
+	var pinkie := preload("res://src/proto3d/scare_pinkie.gd").new()
+	pinkie.position = Vector3(4.6, 1.2, -11.2)
+	add_child(pinkie)
+
 
 ## Пыль в воздухе. Видна только в луче света — именно поэтому и работает:
 ## показывает, что воздух в комнате есть.
