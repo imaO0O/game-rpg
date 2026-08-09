@@ -213,7 +213,9 @@ func _build_environment() -> void:
 	env.background_color = Color(0.01, 0.012, 0.02)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.10, 0.12, 0.18)
-	env.ambient_light_energy = 0.35
+	# Минимальный подсвет, чтобы вне конусов пол и потолок сохраняли
+	# форму, а не проваливались в чистый чёрный.
+	env.ambient_light_energy = 0.45
 
 	# Объёмный туман — главный источник ощущения глубины и сырости.
 	env.volumetric_fog_enabled = true
@@ -244,7 +246,7 @@ func _build_environment() -> void:
 	env.sdfgi_enabled = true
 	env.sdfgi_use_occlusion = true
 	env.sdfgi_bounce_feedback = 0.75
-	env.sdfgi_energy = 1.2
+	env.sdfgi_energy = 1.6
 	env.sdfgi_cascades = 4
 	env.sdfgi_min_cell_size = 0.08
 
@@ -273,7 +275,9 @@ func _build_lights() -> void:
 	# Света в доме мало и он тёплый только в первой комнате. Дальше —
 	# холодные отсветы, обозначающие направление, но не освещающие путь.
 	_lamp(Vector3(0.0, 2.35, 0.6), Color(1.0, 0.78, 0.48), 1.4, 4.5)
-	_lamp(Vector3(0.0, 2.35, -9.0), Color(0.5, 0.68, 1.0), 0.7, 4.0)
+	# Коридор длинный: при прежних 0.7 и четырёх метрах свет обрывался
+	# на трети пути, и дальше геометрия не читалась вовсе.
+	_lamp(Vector3(0.0, 2.35, -9.0), Color(0.5, 0.68, 1.0), 1.1, 5.5)
 	_lamp(Vector3(6.0, 2.35, -11.0), Color(1.0, 0.5, 0.3), 0.9, 4.5)
 
 
@@ -289,7 +293,7 @@ func _lamp(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
 	light.shadow_enabled = true
 	# Ненулевой размер источника даёт полутень. Резкая тень от точки —
 	# первое, что выдаёт движок вместо комнаты.
-	light.light_size = 0.35
+	light.light_size = 0.22
 	light.shadow_blur = 1.8
 	# Объёмный вклад слабый: при высоком лампа рисует вокруг себя мягкое
 	# пятно, которое висит поверх сцены и не связано с геометрией —
@@ -327,7 +331,9 @@ func _lamp(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
 	glow.albedo_color = color
 	glow.emission_enabled = true
 	glow.emission = color
-	glow.emission_energy_multiplier = 4.0
+	# Не выше: при большем сама лампочка размазывается в пятно
+	# на потолке — тот же дефект, что был у объёмного света.
+	glow.emission_energy_multiplier = 2.5
 	bulb.material_override = glow
 	add_child(bulb)
 
