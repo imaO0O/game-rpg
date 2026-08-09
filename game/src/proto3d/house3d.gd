@@ -44,6 +44,7 @@ func _ready() -> void:
 	_build_lights()
 	_build_dust()
 	_build_wear()
+	_build_ambience()
 	_build_scares()
 
 
@@ -455,6 +456,24 @@ func _wear_patch(pos: Vector3, size: Vector3, strength: float) -> void:
 	decal.lower_fade = 0.6
 	decal.normal_fade = 0.35
 	add_child(decal)
+
+
+## Ровный гул дома. Полная тишина в хорроре работает хуже гула:
+## в тишине слышно, что звука просто нет, и иллюзия рассыпается.
+func _build_ambience() -> void:
+	var path := "res://assets/audio/ambience.wav"
+	if not ResourceLoader.exists(path):
+		return
+
+	var player := AudioStreamPlayer.new()
+	var stream: AudioStream = load(path)
+	if stream is AudioStreamWAV:
+		(stream as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_FORWARD
+		(stream as AudioStreamWAV).loop_end = (stream as AudioStreamWAV).data.size() / 2
+	player.stream = stream
+	player.volume_db = -18.0
+	player.autoplay = true
+	add_child(player)
 
 
 ## Скримеры. Первый стоит в начале коридора: игрок должен узнать

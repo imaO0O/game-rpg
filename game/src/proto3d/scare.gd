@@ -85,6 +85,24 @@ func blackout(duration: float) -> void:
 			light.light_energy = saved[light]
 
 
+## Помощник для наследников: источник звука в точке скримера.
+## Если файла нет, возвращается молчащий проигрыватель — скример
+## должен работать и без звука, просто тише.
+func _sound(name: String, volume_db: float) -> AudioStreamPlayer3D:
+	var player := AudioStreamPlayer3D.new()
+	player.volume_db = volume_db
+	# Звук в тесном коридоре не должен быть слышен через весь дом.
+	player.max_distance = 14.0
+	player.unit_size = 3.0
+
+	var path := "res://assets/audio/%s.wav" % name
+	if ResourceLoader.exists(path):
+		player.stream = load(path)
+	else:
+		push_warning("Нет звука %s" % path)
+	return player
+
+
 func _all_lights() -> Array:
 	var result := []
 	for node in get_tree().get_nodes_in_group("house_light"):

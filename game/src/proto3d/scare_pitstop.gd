@@ -16,6 +16,10 @@ var _wheel: Node3D
 var _wheel_target := Vector3.ZERO
 var _rolling := false
 
+var _roll_sound: AudioStreamPlayer3D
+var _hit_sound: AudioStreamPlayer3D
+var _radio_sound: AudioStreamPlayer3D
+
 
 func _ready() -> void:
 	id = "pitstop"
@@ -26,6 +30,17 @@ func _ready() -> void:
 	_wheel = _build_wheel()
 	_wheel.visible = false
 	add_child(_wheel)
+
+	# Звук колеса едет вместе с ним: половина эффекта в том,
+	# что грохот проходит мимо ушей слева направо.
+	_roll_sound = _sound("wheel_roll", -4.0)
+	_wheel.add_child(_roll_sound)
+
+	_hit_sound = _sound("scare_hit", 0.0)
+	add_child(_hit_sound)
+
+	_radio_sound = _sound("radio_static", -6.0)
+	add_child(_radio_sound)
 
 
 func _process(delta: float) -> void:
@@ -46,6 +61,11 @@ func _strike() -> void:
 	_wheel_target = global_position + Vector3(3.5, 0.34, 0.0)
 	_wheel.visible = true
 	_rolling = true
+
+	# Удар и помехи одновременно с темнотой, колесо — сразу следом.
+	_hit_sound.play()
+	_radio_sound.play()
+	_roll_sound.play()
 
 	_say(RADIO_LINE)
 
