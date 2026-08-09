@@ -402,6 +402,42 @@ def make_snake():
     export(snake, "snake.glb")
 
 
+def make_figure():
+    """Силуэт человека для скримеров на записи.
+
+    Намеренно без лица и без деталей: на камере наблюдения человек
+    и так читается пятном, а любая проработка выдала бы, что фигура
+    ненастоящая. Работает силуэт, а не модель.
+    """
+    clear_scene()
+    parts = []
+
+    # Ноги.
+    for x in (-0.09, 0.09):
+        parts.append(box("leg", (0.13, 0.15, 0.82), (x, 0, 0.41), bevel=0.02))
+
+    # Корпус: сужается к талии и расширяется к плечам.
+    parts.append(box("hips", (0.34, 0.19, 0.22), (0, 0, 0.92), bevel=0.03))
+    parts.append(box("chest", (0.42, 0.22, 0.42), (0, 0, 1.28), bevel=0.04))
+
+    # Руки вдоль тела.
+    for x in (-0.26, 0.26):
+        parts.append(box("arm", (0.11, 0.13, 0.62), (x, 0, 1.14), bevel=0.02))
+
+    # Шея и голова.
+    parts.append(cylinder("neck", 0.05, 0.09, (0, 0, 1.53), verts=10))
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.115, location=(0, 0, 1.66), segments=18, ring_count=12)
+    head = bpy.context.active_object
+    head.name = "head"
+    head.scale = (1.0, 1.15, 1.25)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    parts.append(head)
+
+    figure = join(parts, "Figure")
+    shade_smooth_by_angle(figure, angle=50)
+    export(figure, "figure.glb")
+
+
 def main():
     make_door()
     make_chair()
@@ -416,6 +452,7 @@ def main():
     make_helmet()
     make_suitcase()
     make_snake()
+    make_figure()
     print("готово: модели в %s" % OUT_DIR)
 
 

@@ -616,6 +616,12 @@ func _build_scares() -> void:
 	coffee_scare.position = _coffee.position
 	add_child(coffee_scare)
 
+	# Фигура на записи: срабатывает не от места, а от того, что игрок
+	# переключил камеру на дальнюю комнату.
+	var figure := preload("res://src/proto3d/scare_camera_figure.gd").new()
+	figure.attach(_monitor)
+	add_child(figure)
+
 
 ## Пыль в воздухе. Видна только в луче света — именно поэтому и работает:
 ## показывает, что воздух в комнате есть.

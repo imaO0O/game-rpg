@@ -55,7 +55,9 @@ func _physics_process(delta: float) -> void:
 		1: _phase_switch()
 		2: _phase_picture()
 		3: _phase_cycle()
-		4: _finish()
+		4: _phase_figure()
+		5: _phase_figure_gone()
+		6: _finish()
 
 
 func _phase_initial() -> void:
@@ -94,6 +96,14 @@ func _phase_picture() -> void:
 	_check(texture != null, "у монитора есть картинка")
 
 	if texture == null:
+		_next(3)
+		return
+
+	# Без окна рендера нет и кадра: в безоконном прогоне проверять
+	# яркость бессмысленно. Логика переключения при этом проверяется
+	# в любом режиме — а картинку смотрим на прогоне с окном.
+	if DisplayServer.get_name() == "headless":
+		print("  ~ картинка пропущена: прогон без окна")
 		_next(3)
 		return
 
@@ -136,6 +146,54 @@ func _phase_cycle() -> void:
 	_check(_switches >= _cameras.size(), "каждое переключение отмечено сигналом")
 	_check(_active_count() == 1, "после круга активна одна камера")
 	_next(4)
+
+
+## Фигура на записи обязана появиться и обязана исчезнуть. Оставшаяся
+## в кадре фигура превращает скример в декорацию.
+func _phase_figure() -> void:
+	if _timer < 0.2:
+		return
+
+	var figure := _find_figure_scare()
+	_check(figure != null, "скример с фигурой стоит в доме")
+
+	if figure == null:
+		_next(6)
+		return
+
+	_check(
+		Game.has_flag("scare_camera_figure"),
+		"фигура сработала при переключении на дальнюю комнату"
+	)
+	_next(5)
+
+
+func _phase_figure_gone() -> void:
+	var figure := _find_figure_scare()
+	if figure == null or _timer < figure.strike_time + 0.6:
+		return
+
+	# Ищем видимые силуэты в сцене: после разрядки их быть не должно.
+	_check(not _any_figure_visible(figure), "фигура ушла из кадра после разрядки")
+	_next(6)
+
+
+func _find_figure_scare() -> Scare:
+	for child in _house.get_children():
+		if child is Scare and (child as Scare).id == "camera_figure":
+			return child
+	return null
+
+
+func _any_figure_visible(node: Node) -> bool:
+	# Именно is_visible_in_tree: скрытый родитель не сбрасывает флаг
+	# visible у детей, и проверка по нему всегда возвращала бы true.
+	if node is Node3D and node.name.contains("Figure") and (node as Node3D).is_visible_in_tree():
+		return true
+	for child in node.get_children():
+		if _any_figure_visible(child):
+			return true
+	return false
 
 
 func _active_count() -> int:
