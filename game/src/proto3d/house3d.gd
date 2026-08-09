@@ -62,6 +62,10 @@ func _build_materials() -> void:
 		# успевал повториться трижды на глубину коридора.
 		Vector3(0.55, 0.55, 0.55)
 	)
+	# Старые доски не блестят. Без этого под лампой появлялось
+	# зеркальное пятно, читавшееся как лужа в сухом коридоре.
+	_floor_material.roughness = 0.92
+	_floor_material.specular = 0.25
 	_wall_material = _pbr(
 		"res://assets/pbr/Plaster001/Plaster001_1K-JPG_Color.jpg",
 		"res://assets/pbr/Plaster001/Plaster001_1K-JPG_NormalGL.jpg",
@@ -114,7 +118,8 @@ func _pbr(color: String, normal: String, rough: String, ao: String, tiling: Vect
 	if ResourceLoader.exists(normal):
 		mat.normal_enabled = true
 		mat.normal_texture = load(normal)
-		mat.normal_scale = 1.0
+		# Полная сила рельефа на стенах даёт контраст, похожий на камуфляж.
+		mat.normal_scale = 0.35
 	if ResourceLoader.exists(rough):
 		mat.roughness_texture = load(rough)
 	if ao != "" and ResourceLoader.exists(ao):
@@ -157,7 +162,9 @@ func _micro_normal() -> NoiseTexture2D:
 	_micro.height = 512
 	_micro.seamless = true
 	_micro.as_normal_map = true
-	_micro.bump_strength = 0.45
+	# Слабее, чем кажется нужным: при высоком контрасте пятна читаются
+	# как камуфляж, а не как неровности штукатурки.
+	_micro.bump_strength = 0.18
 	return _micro
 
 
@@ -230,9 +237,11 @@ func _build_environment() -> void:
 	env.sdfgi_min_cell_size = 0.08
 
 	env.glow_enabled = true
-	env.glow_intensity = 0.65
-	env.glow_bloom = 0.12
-	env.glow_hdr_threshold = 0.8
+	# Порог поднят: при низком любая лампа превращается в выжженный
+	# белый шар, и источник света перестаёт читаться как предмет.
+	env.glow_intensity = 0.42
+	env.glow_bloom = 0.08
+	env.glow_hdr_threshold = 1.25
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
 
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
@@ -616,7 +625,9 @@ func _build_props() -> void:
 	_prop("shelf", Vector3(3.4, 0.0, -13.2), 0.0, _floor_material)
 
 	# Рама зеркала — модель, само стекло — отдельный узел с отражением.
-	_prop("mirror", Vector3(-1.42, 0.0, -6.4), PI * 0.5, _dark_material)
+	# Рама деревянная: плоский чёрный материал читался как дыра в стене,
+	# а не как предмет.
+	_prop("mirror", Vector3(-1.42, 0.0, -6.4), PI * 0.5, _floor_material)
 
 	_mirror = Mirror.new()
 	_mirror.glass_size = Vector2(0.52, 1.14)
