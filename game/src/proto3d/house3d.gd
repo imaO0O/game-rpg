@@ -42,6 +42,7 @@ func _ready() -> void:
 	_build_clutter()
 	_build_lights()
 	_build_dust()
+	_build_wear()
 	_build_scares()
 
 
@@ -407,6 +408,52 @@ func _build_clutter() -> void:
 			Vector3(0.012, 0.012, 0.5),
 			_dark_material
 		)
+
+
+## Следы жизни: затёртости на высоте руки, пятна под мебелью,
+## тёмные полосы вдоль проходов.
+##
+## Идеально чистая стена читается как поверхность из редактора. Дом,
+## в котором жили, грязнее там, где к нему прикасались, — и глаз
+## считывает это раньше, чем успевает разобрать, что именно видит.
+func _build_wear() -> void:
+	# Затёртости у дверных проёмов — на той высоте, где берутся за косяк.
+	for spot in [
+		Vector3(-0.9, 1.05, -2.2), Vector3(0.9, 1.05, -2.2),
+		Vector3(-0.9, 1.05, -12.0), Vector3(0.9, 1.05, -12.0),
+	]:
+		_wear_patch(spot, Vector3(0.5, 0.9, 0.5), 0.5)
+
+	# Потёртости вдоль стен коридора: там ходят, задевая плечом.
+	for i in 6:
+		_wear_patch(
+			Vector3(-1.4, 1.15, -3.5 - i * 1.6),
+			Vector3(0.4, 1.2, 1.4),
+			0.32
+		)
+
+	# Пятна на полу: под мебелью и там, где что-то проливали.
+	for spot in [
+		Vector3(1.6, 0.02, 0.4), Vector3(-2.0, 0.02, -1.2),
+		Vector3(0.2, 0.02, -6.5), Vector3(6.4, 0.02, -11.4),
+	]:
+		_wear_patch(spot, Vector3(1.6, 0.5, 1.6), 0.4)
+
+
+## Проекция пятна на всё, что под ней. Decal ложится по геометрии,
+## поэтому одно и то же пятно годится и для стены, и для пола.
+func _wear_patch(pos: Vector3, size: Vector3, strength: float) -> void:
+	var decal := Decal.new()
+	decal.position = pos
+	decal.size = size
+	decal.texture_albedo = _stain_texture()
+	decal.albedo_mix = strength
+	decal.modulate = Color(0.35, 0.33, 0.30)
+	# Мягкие края: резкая граница пятна выдаёт наклейку.
+	decal.upper_fade = 0.6
+	decal.lower_fade = 0.6
+	decal.normal_fade = 0.35
+	add_child(decal)
 
 
 ## Скримеры. Первый стоит в начале коридора: игрок должен узнать
