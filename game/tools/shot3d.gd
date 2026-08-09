@@ -15,7 +15,9 @@ const VIEWS := [
 	{"name": "c_door", "pos": Vector3(0.0, 0.9, -0.4), "yaw": 0.0, "pitch": -0.03},
 	{"name": "d_corridor", "pos": Vector3(0.0, 0.9, -4.2), "yaw": 0.0, "pitch": -0.02},
 	{"name": "e_boxes", "pos": Vector3(0.6, 0.9, -7.4), "yaw": 0.35, "pitch": -0.12},
-	{"name": "f_far_room", "pos": Vector3(3.2, 0.9, -10.4), "yaw": 1.25, "pitch": -0.04},
+	# От входа в дальнюю комнату, вдоль неё: так виден и шкаф,
+	# и свет за ним, а не стена в упор.
+	{"name": "f_far_room", "pos": Vector3(2.6, 0.9, -11.4), "yaw": -1.5, "pitch": -0.03},
 	# Комната Зейда: кадр от двери, чтобы в него попали и стул, и доска.
 	{"name": "g_zade", "pos": Vector3(-4.0, 0.9, -14.6), "yaw": 0.0, "pitch": -0.02},
 	{"name": "h_board", "pos": Vector3(-4.0, 1.4, -17.0), "yaw": 0.0, "pitch": 0.02},
