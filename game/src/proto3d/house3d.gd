@@ -28,6 +28,7 @@ var _dark_material: StandardMaterial3D
 var _trim_material: StandardMaterial3D
 var _paper_material: StandardMaterial3D
 var _ceiling_material: StandardMaterial3D
+var _helmet_material: StandardMaterial3D
 var _stain: NoiseTexture2D
 var _micro: NoiseTexture2D
 
@@ -41,6 +42,7 @@ func _ready() -> void:
 	_build_clutter()
 	_build_lights()
 	_build_dust()
+	_build_scares()
 
 
 # --- Материалы ---------------------------------------------------------
@@ -88,6 +90,15 @@ func _build_materials() -> void:
 	)
 	_ceiling_material.albedo_color = Color(0.62, 0.60, 0.58)
 	_ceiling_material.roughness = 1.0
+
+	# Единственная красная вещь в доме (CONCEPT_3D.md, «Тон»).
+	# Лак должен бликовать: шлем обязан ловить взгляд.
+	_helmet_material = StandardMaterial3D.new()
+	_helmet_material.albedo_color = Color(0.72, 0.04, 0.03)
+	_helmet_material.roughness = 0.18
+	_helmet_material.metallic = 0.1
+	_helmet_material.clearcoat_enabled = true
+	_helmet_material.clearcoat = 0.8
 
 
 func _pbr(color: String, normal: String, rough: String, ao: String, tiling: Vector3) -> StandardMaterial3D:
@@ -255,6 +266,8 @@ func _lamp(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
 	light.light_size = 0.35
 	light.shadow_blur = 1.8
 	light.light_volumetric_fog_energy = 1.6
+	# Скримеры гасят весь свет разом — им нужно знать, что гасить.
+	light.add_to_group("house_light")
 	add_child(light)
 
 	# Сам плафон: источник должен быть виден, иначе свет «ниоткуда».
@@ -396,6 +409,14 @@ func _build_clutter() -> void:
 		)
 
 
+## Скримеры. Первый стоит в начале коридора: игрок должен узнать
+## правила жанра раньше, чем уйдёт вглубь дома.
+func _build_scares() -> void:
+	var pitstop := preload("res://src/proto3d/scare_pitstop.gd").new()
+	pitstop.position = Vector3(0.0, 1.2, -4.5)
+	add_child(pitstop)
+
+
 ## Пыль в воздухе. Видна только в луче света — именно поэтому и работает:
 ## показывает, что воздух в комнате есть.
 func _build_dust() -> void:
@@ -463,6 +484,22 @@ func _build_props() -> void:
 	_prop("cardboard_box", Vector3(-0.85, 0.34, -5.45), -0.2, _floor_material)
 	_prop("cardboard_box", Vector3(0.95, 0.0, -8.6), 1.1, _floor_material)
 	_prop("cardboard_box", Vector3(5.4, 0.0, -12.2), -0.6, _floor_material)
+
+	# Кофемашина — точка сохранения, её видно с порога.
+	_prop("coffee_machine", Vector3(1.55, 0.77, 0.15), -0.15, _dark_material)
+
+	# Стеллаж и то, что стоит на нём: шлем и чемодан рассказывают,
+	# чей это дом, быстрее любой записки.
+	_prop("shelf", Vector3(2.3, 0.0, -1.55), PI, _floor_material)
+	_prop("helmet", Vector3(2.15, 1.22, -1.5), 0.4, _helmet_material)
+	_prop("suitcase", Vector3(-2.05, 0.0, 0.9), 0.25, _dark_material)
+
+	# Спальня в дальней комнате.
+	_prop("bed", Vector3(6.4, 0.0, -11.4), PI * 0.5, _floor_material)
+	_prop("shelf", Vector3(3.4, 0.0, -13.2), 0.0, _floor_material)
+
+	# Зеркало в коридоре — под скример с запаздывающим отражением.
+	_prop("mirror", Vector3(-1.42, 0.0, -6.4), PI * 0.5, _dark_material)
 
 	# Двери в проёмах — приоткрытые, чтобы за ними была видна темнота.
 	_prop("door", Vector3(-0.55, 0.0, -2.2), 0.6, _floor_material)

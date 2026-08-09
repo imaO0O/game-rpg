@@ -5,6 +5,10 @@
 ## опасность здесь в атмосфере, а не в противнике.
 extends CharacterBody3D
 
+## Скримеры ищут игрока по группе, а не по имени узла.
+func _enter_tree() -> void:
+	add_to_group("player")
+
 @export var walk_speed := 2.2
 @export var run_speed := 4.0
 @export var mouse_sensitivity := 0.0022

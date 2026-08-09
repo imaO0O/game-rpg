@@ -73,13 +73,22 @@ def join(objects, name):
 
 
 def shade_smooth_by_angle(obj, angle=35):
-    """Гладкое затенение только на плавных изгибах — грани остаются гранями."""
+    """Гладкое затенение только на плавных изгибах — грани остаются гранями.
+
+    В Blender 4.1+ use_auto_smooth убрали, вместо него оператор
+    shade_auto_smooth. Поддерживаем оба варианта: скрипт должен
+    пережить обновление движка.
+    """
     bpy.context.view_layer.objects.active = obj
+
+    if hasattr(bpy.ops.object, "shade_auto_smooth"):
+        bpy.ops.object.shade_auto_smooth(angle=math.radians(angle))
+        return
+
     bpy.ops.object.shade_smooth()
-    obj.data.use_auto_smooth = True if hasattr(obj.data, "use_auto_smooth") else False
-    modifier = obj.modifiers.new(name="Smooth", type="WEIGHTED_NORMAL")
-    modifier.keep_sharp = True
-    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    if hasattr(obj.data, "use_auto_smooth"):
+        obj.data.use_auto_smooth = True
+        obj.data.auto_smooth_angle = math.radians(angle)
 
 
 def export(obj, filename):
@@ -220,6 +229,141 @@ def make_box_prop():
     export(crate, "cardboard_box.glb")
 
 
+def make_coffee_machine():
+    """Кофемашина. Кофе — сквозная тема всей игры, и точка сохранения
+    должна быть узнаваема с порога комнаты."""
+    clear_scene()
+    parts = [
+        box("body", (0.28, 0.34, 0.38), (0, 0, 0.19)),
+        # Ниша под чашку: вырезаем углубление, а не рисуем его.
+        box("top", (0.28, 0.34, 0.06), (0, 0, 0.41)),
+    ]
+
+    niche = box("niche", (0.19, 0.24, 0.16), (0, -0.06, 0.13), bevel=0.003)
+    modifier = parts[0].modifiers.new(name="Cut", type="BOOLEAN")
+    modifier.operation = "DIFFERENCE"
+    modifier.object = niche
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    bpy.data.objects.remove(niche, do_unlink=True)
+
+    # Разливочная группа и поддон.
+    parts.append(cylinder("spout", 0.02, 0.05, (0, -0.06, 0.235), verts=12))
+    parts.append(box("tray", (0.18, 0.22, 0.012), (0, -0.06, 0.055)))
+    # Панель кнопок.
+    for i in range(3):
+        parts.append(cylinder("btn", 0.012, 0.008, (-0.08 + i * 0.08, -0.172, 0.32), (math.pi / 2, 0, 0), verts=10))
+
+    machine = join(parts, "CoffeeMachine")
+    export(machine, "coffee_machine.glb")
+
+
+def make_mirror():
+    """Зеркало в раме. Нужно для скримера с запаздывающим отражением,
+    поэтому стекло — отдельная плоскость с собственным материалом."""
+    clear_scene()
+    parts = [
+        box("frame", (0.62, 0.05, 1.24), (0, 0, 0.62)),
+    ]
+    glass = box("glass", (0.52, 0.02, 1.14), (0, -0.02, 0.62), bevel=0.002)
+    parts.append(glass)
+
+    mirror = join(parts, "Mirror")
+    export(mirror, "mirror.glb")
+
+
+def make_bed():
+    clear_scene()
+    parts = [
+        box("mattress", (0.95, 1.95, 0.22), (0, 0, 0.42)),
+        box("frame", (1.03, 2.03, 0.16), (0, 0, 0.24)),
+        box("headboard", (1.03, 0.06, 0.62), (0, 1.0, 0.55)),
+        # Подушка и складка одеяла: без них кровать — просто параллелепипед.
+        box("pillow", (0.5, 0.3, 0.11), (0, 0.75, 0.58), bevel=0.03),
+        box("blanket", (0.99, 1.25, 0.06), (0, -0.3, 0.55), bevel=0.02),
+    ]
+    for x in (-0.46, 0.46):
+        for y in (-0.94, 0.94):
+            parts.append(box("leg", (0.07, 0.07, 0.16), (x, y, 0.08)))
+
+    bed = join(parts, "Bed")
+    export(bed, "bed.glb")
+
+
+def make_shelf():
+    """Стеллаж с книгами. Книги разной высоты и наклона — иначе полка
+    читается как сплошной брусок."""
+    clear_scene()
+    parts = [
+        box("side_l", (0.04, 0.32, 1.8), (-0.44, 0, 0.9)),
+        box("side_r", (0.04, 0.32, 1.8), (0.44, 0, 0.9)),
+        box("back", (0.92, 0.02, 1.8), (0, 0.16, 0.9)),
+    ]
+
+    shelf_heights = (0.32, 0.76, 1.2, 1.64)
+    for z in shelf_heights:
+        parts.append(box("shelf", (0.88, 0.32, 0.03), (0, 0, z)))
+
+    rng_x = -0.4
+    for index, z in enumerate(shelf_heights[:-1]):
+        x = -0.4
+        while x < 0.36:
+            width = 0.03 + (index * 7 + int(x * 100)) % 4 * 0.012
+            height = 0.2 + ((index * 5 + int(x * 90)) % 5) * 0.022
+            book = box("book", (width, 0.24, height), (x + width / 2, -0.02, z + 0.015 + height / 2))
+            # Каждая пятая книга наклонена — глаз цепляется именно за это.
+            if (index * 3 + int(x * 80)) % 5 == 0:
+                book.rotation_euler = (0, math.radians(9), 0)
+                bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+            parts.append(book)
+            x += width + 0.006
+
+    shelf = join(parts, "Shelf")
+    export(shelf, "shelf.glb")
+
+
+def make_helmet():
+    """Гоночный шлем на полке. Отсылка к Ferrari — и единственный
+    предмет в доме, который игрок узнает мгновенно."""
+    clear_scene()
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.14, location=(0, 0, 0.14), segments=24, ring_count=16)
+    shell = bpy.context.active_object
+    shell.name = "shell"
+    shell.scale = (1.0, 1.15, 1.0)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+    # Срезаем низ, чтобы шлем стоял, а не катался.
+    cutter = box("cut", (0.4, 0.4, 0.12), (0, 0, 0.02), bevel=0)
+    modifier = shell.modifiers.new(name="Cut", type="BOOLEAN")
+    modifier.operation = "DIFFERENCE"
+    modifier.object = cutter
+    bpy.context.view_layer.objects.active = shell
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    bpy.data.objects.remove(cutter, do_unlink=True)
+
+    visor = box("visor", (0.2, 0.14, 0.09), (0, -0.11, 0.17), bevel=0.01)
+    helmet = join([shell, visor], "Helmet")
+    shade_smooth_by_angle(helmet)
+    export(helmet, "helmet.glb")
+
+
+def make_suitcase():
+    """Чемодан. Катя была почти во всех городах России — вещь,
+    которая говорит об этом без единого слова."""
+    clear_scene()
+    parts = [
+        box("body", (0.52, 0.2, 0.72), (0, 0, 0.36)),
+        box("seam", (0.53, 0.21, 0.02), (0, 0, 0.4)),
+        box("handle_base", (0.16, 0.03, 0.03), (0, 0, 0.735)),
+    ]
+    parts.append(cylinder("handle", 0.012, 0.16, (0, 0, 0.78), (0, math.pi / 2, 0), verts=10))
+    for x in (-0.2, 0.2):
+        parts.append(cylinder("wheel", 0.03, 0.02, (x, 0, 0.02), (0, math.pi / 2, 0), verts=12))
+
+    case = join(parts, "Suitcase")
+    export(case, "suitcase.glb")
+
+
 def main():
     make_door()
     make_chair()
@@ -227,6 +371,12 @@ def main():
     make_wardrobe()
     make_lamp()
     make_box_prop()
+    make_coffee_machine()
+    make_mirror()
+    make_bed()
+    make_shelf()
+    make_helmet()
+    make_suitcase()
     print("готово: модели в %s" % OUT_DIR)
 
 
