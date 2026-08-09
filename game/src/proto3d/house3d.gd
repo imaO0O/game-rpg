@@ -47,6 +47,7 @@ func _ready() -> void:
 	_build_ambience()
 	_build_memories()
 	_build_scares()
+	_build_hud()
 
 
 # --- Материалы ---------------------------------------------------------
@@ -457,6 +458,14 @@ func _wear_patch(pos: Vector3, size: Vector3, strength: float) -> void:
 	decal.lower_fade = 0.6
 	decal.normal_fade = 0.35
 	add_child(decal)
+
+
+## Интерфейс. Ищем игрока в сцене, а не требуем ссылку: дом строится
+## кодом, и лишняя связь в редакторе только ломалась бы.
+func _build_hud() -> void:
+	var hud := preload("res://src/proto3d/hud3d.tscn").instantiate()
+	hud.player = get_node_or_null("Player")
+	add_child(hud)
 
 
 ## Осколки памяти по дому. Идентификаторы те же, что в двумерной
