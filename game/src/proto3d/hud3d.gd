@@ -57,7 +57,7 @@ func _draw_crosshair() -> void:
 	_crosshair.draw_circle(centre, radius, color, false, 1.5, true)
 
 
-func _on_target_changed(target: Node3D) -> void:
+func _on_target_changed(target: Interactable) -> void:
 	_crosshair.queue_redraw()
 
 	if target == null:
@@ -65,7 +65,9 @@ func _on_target_changed(target: Node3D) -> void:
 			_prompt.text = ""
 		return
 
-	_prompt.text = "E — взять"
+	# Подпись даёт сам объект: осколок предлагает взять, кофемашина —
+	# выпить конкретный напиток.
+	_prompt.text = "E — %s" % target.prompt()
 	_toast_time = 0.0
 
 

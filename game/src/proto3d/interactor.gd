@@ -6,14 +6,15 @@
 class_name Interactor
 extends Node3D
 
-signal target_changed(target: Node3D)
+signal target_changed(target: Interactable)
 signal taken(id: String)
+signal used(target: Interactable)
 
 ## На какой дистанции предмет ещё можно взять.
 @export var reach := 2.4
 
 var _camera: Camera3D
-var _current: MemoryObject
+var _current: Interactable
 
 
 func _ready() -> void:
@@ -47,17 +48,23 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _current == null or not is_instance_valid(_current):
 		return
 
-	var id := _current.id
-	if _current.take():
-		taken.emit(id)
+	var target := _current
+	if not target.interact():
+		return
+
+	get_viewport().set_input_as_handled()
+	used.emit(target)
+
+	# Осколок исчезает после подбора, кофемашина остаётся на месте.
+	if target is MemoryObject:
+		taken.emit((target as MemoryObject).id)
 		_current = null
 		target_changed.emit(null)
-		get_viewport().set_input_as_handled()
 
 
 ## Луч по маске осколков. Обычная геометрия его не перехватывает —
 ## иначе предмет на столе было бы не взять из-за самого стола.
-func _cast() -> MemoryObject:
+func _cast() -> Interactable:
 	var space := get_world_3d().direct_space_state
 	var from := _camera.global_position
 	var to := from - _camera.global_transform.basis.z * reach
@@ -65,7 +72,7 @@ func _cast() -> MemoryObject:
 	var query := PhysicsRayQueryParameters3D.create(from, to)
 	query.collide_with_areas = true
 	query.collide_with_bodies = false
-	query.collision_mask = 4
+	query.collision_mask = Interactable.LAYER
 
 	var hit := space.intersect_ray(query)
 	if hit.is_empty():
@@ -75,12 +82,12 @@ func _cast() -> MemoryObject:
 	if collider == null:
 		return null
 
-	# Область висит внутри осколка, поэтому нужный узел — родитель.
+	# Область висит внутри объекта, поэтому нужный узел — родитель.
 	var node := (collider as Node).get_parent()
-	return node as MemoryObject
+	return node as Interactable
 
 
-func current() -> MemoryObject:
+func current() -> Interactable:
 	return _current
 
 

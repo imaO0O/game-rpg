@@ -7,7 +7,7 @@
 ## Сам предмет ничего не знает о своём содержании — подпись и медиа
 ## приходят из каталога, а тот берёт их из private/.
 class_name MemoryObject
-extends Node3D
+extends Interactable
 
 signal collected(id: String)
 
@@ -18,9 +18,7 @@ signal collected(id: String)
 ## Насколько сильно предмет светится, когда на него смотрят.
 @export var glow := 0.55
 
-var _area: Area3D
 var _highlight: OmniLight3D
-var _looked_at := false
 var _spin := 0.0
 
 
@@ -33,8 +31,9 @@ func _ready() -> void:
 		queue_free()
 		return
 
+	prompt_text = "взять"
 	_build_visual()
-	_build_area()
+	build_target(0.5, Vector3(0.0, 0.3, 0.0))
 
 	# Слабый огонёк: в тёмном доме предмет иначе не найти вовсе,
 	# а искать наощупь — не та игра.
@@ -55,7 +54,7 @@ func _process(delta: float) -> void:
 		if visual is Node3D:
 			(visual as Node3D).rotation.y = _spin
 
-	var target := glow if _looked_at else 0.12
+	var target := glow if is_looked_at() else 0.12
 	_highlight.light_energy = lerpf(_highlight.light_energy, target, 1.0 - exp(-8.0 * delta))
 
 
@@ -84,33 +83,20 @@ func _build_visual() -> void:
 	add_child(frame)
 
 
-func _build_area() -> void:
-	_area = Area3D.new()
-	var shape := CollisionShape3D.new()
-	var sphere := SphereShape3D.new()
-	sphere.radius = 0.5
-	shape.shape = sphere
-	shape.position = Vector3(0.0, 0.3, 0.0)
-	_area.add_child(shape)
-	# Взгляд ищет осколки лучом, поэтому нужна отдельная маска.
-	_area.collision_layer = 4
-	_area.collision_mask = 0
-	add_child(_area)
-
-
-## Вызывается, когда луч взгляда попал или сошёл с предмета.
-func set_looked_at(value: bool) -> void:
-	_looked_at = value
-
-
 func caption() -> String:
 	return ShardRegistry.caption(id)
 
 
 ## Взять. Возвращает false, если осколок уже был собран.
-func take() -> bool:
+func interact() -> bool:
 	if not Game.collect_shard(id):
 		return false
 	collected.emit(id)
 	queue_free()
 	return true
+
+
+## Прежнее имя действия — оставлено, потому что читается лучше
+## обобщённого interact() там, где речь именно про осколок.
+func take() -> bool:
+	return interact()

@@ -589,8 +589,15 @@ func _build_props() -> void:
 	_prop("cardboard_box", Vector3(0.95, 0.0, -8.6), 1.1, _floor_material)
 	_prop("cardboard_box", Vector3(5.4, 0.0, -12.2), -0.6, _floor_material)
 
-	# Кофемашина — точка сохранения, её видно с порога.
+	# Кофемашина — точка покоя. Модель отдельно, логика отдельно.
 	_prop("coffee_machine", Vector3(1.55, 0.77, 0.15), -0.15, _dark_material)
+
+	var coffee := CoffeePoint.new()
+	coffee.id = "home_kitchen"
+	coffee.city = "Рязань"
+	coffee.drink = "капучино на овсяном"
+	coffee.position = Vector3(1.55, 0.77, 0.15)
+	add_child(coffee)
 
 	# Стеллаж и то, что стоит на нём: шлем и чемодан рассказывают,
 	# чей это дом, быстрее любой записки.
