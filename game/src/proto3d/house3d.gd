@@ -10,7 +10,9 @@
 extends Node3D
 
 const WALL := 0.15
-const ROOM_H := 2.7
+## Высота жилой комнаты. При 2.7 мебель и двери выглядели игрушечными:
+## пространство читалось как ангар, а не как квартира.
+const ROOM_H := 2.5
 
 ## Комнаты: положение и размер в метрах.
 const ROOMS := [
@@ -25,6 +27,9 @@ var _wall_material: StandardMaterial3D
 var _dark_material: StandardMaterial3D
 var _trim_material: StandardMaterial3D
 var _paper_material: StandardMaterial3D
+var _ceiling_material: StandardMaterial3D
+var _stain: NoiseTexture2D
+var _micro: NoiseTexture2D
 
 
 func _ready() -> void:
@@ -46,7 +51,9 @@ func _build_materials() -> void:
 		"res://assets/pbr/WoodFloor043/WoodFloor043_1K-JPG_NormalGL.jpg",
 		"res://assets/pbr/WoodFloor043/WoodFloor043_1K-JPG_Roughness.jpg",
 		"res://assets/pbr/WoodFloor043/WoodFloor043_1K-JPG_AmbientOcclusion.jpg",
-		Vector3(1.5, 1.5, 1.5)
+		# Крупнее доска — реже повтор в кадре. При 1.5 рисунок пола
+		# успевал повториться трижды на глубину коридора.
+		Vector3(0.55, 0.55, 0.55)
 	)
 	_wall_material = _pbr(
 		"res://assets/pbr/Plaster001/Plaster001_1K-JPG_Color.jpg",
@@ -70,6 +77,18 @@ func _build_materials() -> void:
 	_paper_material.albedo_color = Color(0.62, 0.60, 0.55)
 	_paper_material.roughness = 0.95
 
+	# Потолок — та же штукатурка, но темнее и глуше: побелка со временем
+	# сереет, а бликов сверху быть не должно.
+	_ceiling_material = _pbr(
+		"res://assets/pbr/Plaster001/Plaster001_1K-JPG_Color.jpg",
+		"res://assets/pbr/Plaster001/Plaster001_1K-JPG_NormalGL.jpg",
+		"res://assets/pbr/Plaster001/Plaster001_1K-JPG_Roughness.jpg",
+		"",
+		Vector3(0.9, 0.9, 0.9)
+	)
+	_ceiling_material.albedo_color = Color(0.62, 0.60, 0.58)
+	_ceiling_material.roughness = 1.0
+
 
 func _pbr(color: String, normal: String, rough: String, ao: String, tiling: Vector3) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
@@ -90,7 +109,69 @@ func _pbr(color: String, normal: String, rough: String, ao: String, tiling: Vect
 	# Триплanar снимает вопрос развёртки: одна и та же настройка годится
 	# и для пола, и для стен любого размера.
 	mat.uv1_triplanar = true
+
+	# Слой пятен поверх основного материала. Он крупнее тайла и не кратен
+	# ему, поэтому разбивает регулярный повтор досок — именно повтор
+	# первым выдаёт, что текстура положена «как есть».
+	mat.detail_enabled = true
+	mat.detail_blend_mode = BaseMaterial3D.BLEND_MODE_MUL
+	mat.detail_albedo = _stain_texture()
+	mat.detail_uv_layer = BaseMaterial3D.DETAIL_UV_1
+	# Микрорельеф: мелкий шум как нормаль. Без него штукатурка остаётся
+	# плоской даже под скользящим светом — свет не за что зацепиться.
+	mat.detail_normal = _micro_normal()
+
 	return mat
+
+
+## Мелкий шум в виде карты нормалей. Частота на порядок выше, чем
+## у карты пятен: одна разбивает повтор, вторая даёт сцепление со светом.
+func _micro_normal() -> NoiseTexture2D:
+	if _micro != null:
+		return _micro
+
+	var noise := FastNoiseLite.new()
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	noise.frequency = 0.09
+	noise.fractal_octaves = 3
+
+	_micro = NoiseTexture2D.new()
+	_micro.noise = noise
+	_micro.width = 512
+	_micro.height = 512
+	_micro.seamless = true
+	_micro.as_normal_map = true
+	_micro.bump_strength = 0.45
+	return _micro
+
+
+## Процедурная карта пятен: облачный шум, растянутый настолько, что
+## его период не совпадает с периодом основной текстуры.
+func _stain_texture() -> NoiseTexture2D:
+	if _stain != null:
+		return _stain
+
+	var noise := FastNoiseLite.new()
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	noise.frequency = 0.011
+	noise.fractal_octaves = 3
+
+	_stain = NoiseTexture2D.new()
+	_stain.noise = noise
+	_stain.width = 512
+	_stain.height = 512
+	_stain.seamless = true
+	# Разброс намеренно узкий. Широкий давал на стенах облака, читавшиеся
+	# как плесень; задача слоя — сбить регулярность, а не рисовать грязь.
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
+	ramp.colors = PackedColorArray([
+		Color(0.84, 0.83, 0.81),
+		Color(0.94, 0.94, 0.93),
+		Color(1.0, 1.0, 1.0),
+	])
+	_stain.color_ramp = ramp
+	return _stain
 
 
 # --- Освещение и атмосфера ---------------------------------------------
@@ -127,8 +208,8 @@ func _build_environment() -> void:
 	# и комната читается как коробка с прожектором.
 	env.sdfgi_enabled = true
 	env.sdfgi_use_occlusion = true
-	env.sdfgi_bounce_feedback = 0.5
-	env.sdfgi_energy = 1.4
+	env.sdfgi_bounce_feedback = 0.75
+	env.sdfgi_energy = 1.2
 	env.sdfgi_cascades = 4
 	env.sdfgi_min_cell_size = 0.08
 
@@ -201,7 +282,10 @@ func _build_rooms() -> void:
 		var size: Vector3 = room.size
 
 		_slab(pos + Vector3(0, -WALL * 0.5, 0), Vector3(size.x, WALL, size.z), _floor_material)
-		_slab(pos + Vector3(0, size.y + WALL * 0.5, 0), Vector3(size.x, WALL, size.z), _dark_material)
+		# Потолок — та же штукатурка, что и стены. Раньше он был выкрашен
+		# почти в чёрный, и это выглядело как дыра в геометрии: света он
+		# не отражал вовсе, сколько его ни добавляй.
+		_slab(pos + Vector3(0, size.y + WALL * 0.5, 0), Vector3(size.x, WALL, size.z), _ceiling_material)
 
 		var half := size * 0.5
 		_slab(pos + Vector3(-half.x, half.y, 0), Vector3(WALL, size.y, size.z), _wall_material)
@@ -260,6 +344,22 @@ func _build_trim() -> void:
 				Vector3(D, H, size.z),
 				_trim_material
 			)
+
+		# Вертикальные уголки. Прямое ребро стены не ловит свет и
+		# выглядит нарисованным; узкая грань под углом даёт блик
+		# и обозначает, где стена поворачивает.
+		for dx in [-half.x, half.x]:
+			for dz in [-half.z, half.z]:
+				var corner := _slab(
+					Vector3(
+						pos.x + dx - signf(dx) * 0.03,
+						size.y * 0.5,
+						pos.z + dz - signf(dz) * 0.03
+					),
+					Vector3(0.05, size.y, 0.05),
+					_wall_material
+				)
+				corner.rotation.y = PI * 0.25
 
 
 ## Мелочь, которой живут комнаты: бумага на полу, бутылки, забытые вещи.
