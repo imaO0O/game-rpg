@@ -53,8 +53,9 @@ func _physics_process(delta: float) -> void:
 	match _phase:
 		0: _phase_initial()
 		1: _phase_switch()
-		2: _phase_cycle()
-		3: _finish()
+		2: _phase_picture()
+		3: _phase_cycle()
+		4: _finish()
 
 
 func _phase_initial() -> void:
@@ -82,6 +83,44 @@ func _phase_switch() -> void:
 	_next(2)
 
 
+## Камера должна снимать комнату, а не чёрный кадр. Проверяется
+## яркостью: пустой рендер даёт ноль, любая освещённая сцена — заметно
+## больше. Без этой проверки монитор «работает» и показывает черноту.
+func _phase_picture() -> void:
+	if _timer < 0.6:
+		return
+
+	var texture := _monitor.feed_texture()
+	_check(texture != null, "у монитора есть картинка")
+
+	if texture == null:
+		_next(3)
+		return
+
+	var image := texture.get_image()
+	_check(image != null and image.get_width() > 0, "картинка не пустая")
+
+	if image == null:
+		_next(3)
+		return
+
+	# Считаем среднюю яркость по сетке, а не по всем пикселям:
+	# полного прохода тут не нужно, а время теста экономит.
+	var total := 0.0
+	var samples := 0
+	for x in range(0, image.get_width(), 8):
+		for y in range(0, image.get_height(), 8):
+			total += image.get_pixel(x, y).get_luminance()
+			samples += 1
+
+	var average := total / maxf(samples, 1)
+	_check(
+		average > 0.01,
+		"на монитор идёт картинка, а не чернота (яркость %.4f)" % average
+	)
+	_next(3)
+
+
 ## Полный круг должен вернуть к первой камере, а не упереться в конец.
 func _phase_cycle() -> void:
 	if _timer < 0.2:
@@ -96,7 +135,7 @@ func _phase_cycle() -> void:
 	)
 	_check(_switches >= _cameras.size(), "каждое переключение отмечено сигналом")
 	_check(_active_count() == 1, "после круга активна одна камера")
-	_next(3)
+	_next(4)
 
 
 func _active_count() -> int:
