@@ -35,6 +35,8 @@ var _stain: NoiseTexture2D
 var _micro: NoiseTexture2D
 var _mirror: Mirror
 var _coffee: CoffeePoint
+var _monitor: CameraMonitor
+var _cameras: Array[SecurityCamera] = []
 
 
 func _ready() -> void:
@@ -49,6 +51,7 @@ func _ready() -> void:
 	_build_wear()
 	_build_ambience()
 	_build_memories()
+	_build_cameras()
 	_build_zade_room()
 	_build_scares()
 	_build_hud()
@@ -473,6 +476,42 @@ func _wear_patch(pos: Vector3, size: Vector3, strength: float) -> void:
 	add_child(decal)
 
 
+## Камеры Зейда. Развешаны по углам и смотрят на проходы — туда,
+## где человек обязательно окажется, а не в пустые стены.
+func _build_cameras() -> void:
+	var spots := [
+		{
+			"label": "кухня",
+			"pos": Vector3(-2.2, 2.3, 1.7),
+			"look": Vector3(1.6, 0.9, 0.2),
+		},
+		{
+			"label": "коридор",
+			"pos": Vector3(1.2, 2.3, -3.4),
+			"look": Vector3(0.0, 1.0, -9.0),
+		},
+		{
+			"label": "дальняя комната",
+			"pos": Vector3(7.8, 2.3, -9.2),
+			"look": Vector3(5.4, 0.9, -12.0),
+		},
+		{
+			"label": "у зеркала",
+			"pos": Vector3(1.2, 2.3, -7.6),
+			"look": Vector3(-1.4, 1.1, -6.4),
+		},
+	]
+
+	for spot: Dictionary in spots:
+		var camera := SecurityCamera.new()
+		camera.label = spot.label
+		camera.position = spot.pos
+		add_child(camera)
+		# Целимся после добавления: look_at требует места в дереве.
+		camera.aim_at(spot.look)
+		_cameras.append(camera)
+
+
 ## Комната Зейда: доска с фотографиями и стул напротив неё.
 ## Обстановка расставлена так, чтобы взгляд шёл по цепочке —
 ## сначала стул, потом то, на что он смотрит.
@@ -490,6 +529,12 @@ func _build_zade_room() -> void:
 	# Единственный свет — лампа сбоку от доски, а не перед ней:
 	# висящая по центру била бы прямо в глаза входящему.
 	_lamp(Vector3(-5.3, 1.75, -17.6), Color(1.0, 0.72, 0.42), 0.7, 3.4)
+
+	# Монитор на столике сбоку: отсюда он смотрел за всем домом.
+	_monitor = CameraMonitor.new()
+	_monitor.position = Vector3(-2.35, 1.3, -17.2)
+	_monitor.rotation.y = -PI * 0.5
+	add_child(_monitor)
 
 	# Осколок здесь один, и он про него, а не про города.
 	var shard := MemoryObject.new()
