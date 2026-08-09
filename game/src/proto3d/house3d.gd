@@ -32,6 +32,7 @@ var _helmet_material: StandardMaterial3D
 var _stain: NoiseTexture2D
 var _micro: NoiseTexture2D
 var _mirror: Mirror
+var _coffee: CoffeePoint
 
 
 func _ready() -> void:
@@ -535,6 +536,13 @@ func _build_scares() -> void:
 	snake.position = Vector3(-1.6, 1.1, -1.2)
 	add_child(snake)
 
+	# Кофемашина пугает не входом в зону, а собственным нажатием
+	# игрока — от этого и смешнее.
+	var coffee_scare := preload("res://src/proto3d/scare_coffee.gd").new()
+	coffee_scare.attach(_coffee)
+	coffee_scare.position = _coffee.position
+	add_child(coffee_scare)
+
 
 ## Пыль в воздухе. Видна только в луче света — именно поэтому и работает:
 ## показывает, что воздух в комнате есть.
@@ -607,12 +615,12 @@ func _build_props() -> void:
 	# Кофемашина — точка покоя. Модель отдельно, логика отдельно.
 	_prop("coffee_machine", Vector3(1.55, 0.77, 0.15), -0.15, _dark_material)
 
-	var coffee := CoffeePoint.new()
-	coffee.id = "home_kitchen"
-	coffee.city = "Рязань"
-	coffee.drink = "капучино на овсяном"
-	coffee.position = Vector3(1.55, 0.77, 0.15)
-	add_child(coffee)
+	_coffee = CoffeePoint.new()
+	_coffee.id = "home_kitchen"
+	_coffee.city = "Рязань"
+	_coffee.drink = "капучино на овсяном"
+	_coffee.position = Vector3(1.55, 0.77, 0.15)
+	add_child(_coffee)
 
 	# Стеллаж и то, что стоит на нём: шлем и чемодан рассказывают,
 	# чей это дом, быстрее любой записки.

@@ -39,11 +39,20 @@ func _ready() -> void:
 
 
 func _on_body_entered(body: Node3D) -> void:
-	if not _armed or not body.is_in_group("player"):
+	if not body.is_in_group("player"):
+		return
+	_player = body
+	fire()
+
+
+## Запуск вручную. Нужен скримерам, которые срабатывают не от входа
+## в зону, а от действия игрока — например, от нажатия на кнопку
+## кофемашины. Повторные вызовы игнорируются так же, как повторный вход.
+func fire() -> void:
+	if not _armed:
 		return
 
 	_armed = false
-	_player = body
 	if not id.is_empty():
 		Game.set_flag(_flag())
 
