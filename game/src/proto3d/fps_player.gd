@@ -41,6 +41,11 @@ func _ready() -> void:
 	_flashlight_energy = flashlight.light_energy
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
+	# Взаимодействие живёт отдельным узлом: контроллер отвечает
+	# за движение, а что делает E — другая забота, и она будет расти.
+	var interactor := Interactor.new()
+	add_child(interactor)
+
 	_steps = AudioStreamPlayer3D.new()
 	_steps.volume_db = -12.0
 	_steps.max_distance = 8.0
@@ -61,8 +66,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
-	if event.is_action_pressed("interact"):
-		flashlight.visible = not flashlight.visible
+	# Фонарь на отдельной кнопке: E занят взятием предметов, и мигать
+	# светом при каждой попытке что-то поднять — худшее, что можно
+	# сделать в тёмной игре.
+	if event.is_action_pressed("stalk"):
+		if battery > 0.0:
+			flashlight.visible = not flashlight.visible
 
 
 func _physics_process(delta: float) -> void:

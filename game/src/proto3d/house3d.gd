@@ -45,6 +45,7 @@ func _ready() -> void:
 	_build_dust()
 	_build_wear()
 	_build_ambience()
+	_build_memories()
 	_build_scares()
 
 
@@ -456,6 +457,24 @@ func _wear_patch(pos: Vector3, size: Vector3, strength: float) -> void:
 	decal.lower_fade = 0.6
 	decal.normal_fade = 0.35
 	add_child(decal)
+
+
+## Осколки памяти по дому. Идентификаторы те же, что в двумерной
+## версии: каталог, сохранение и подписи переиспользуются целиком.
+func _build_memories() -> void:
+	var spots := [
+		{"id": "ryazan_01", "pos": Vector3(1.6, 0.77, 0.7), "model": ""},
+		{"id": "ryazan_02", "pos": Vector3(-2.0, 0.9, -1.2), "model": ""},
+		{"id": "ryazan_03", "pos": Vector3(0.4, 0.0, -8.2), "model": ""},
+		{"id": "ryazan_05", "pos": Vector3(6.2, 0.55, -12.6), "model": ""},
+	]
+
+	for spot: Dictionary in spots:
+		var memory := MemoryObject.new()
+		memory.id = spot.id
+		memory.model = spot.model
+		memory.position = spot.pos
+		add_child(memory)
 
 
 ## Ровный гул дома. Полная тишина в хорроре работает хуже гула:
