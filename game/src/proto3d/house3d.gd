@@ -680,6 +680,13 @@ func _build_scares() -> void:
 	pinkie.position = Vector3(4.6, 1.2, -11.2)
 	add_child(pinkie)
 
+	# Дементор из пара — со второго кофе. Первый раз игрок уже получил
+	# скример от самой машины, два подряд в одном месте превратили бы
+	# точку покоя в аттракцион.
+	var dementor := preload("res://src/proto3d/scare_dementor.gd").new()
+	dementor.attach(_coffee)
+	add_child(dementor)
+
 
 ## Пыль в воздухе. Видна только в луче света — именно поэтому и работает:
 ## показывает, что воздух в комнате есть.
