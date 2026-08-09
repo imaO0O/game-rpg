@@ -5,6 +5,10 @@
 ## опасность здесь в атмосфере, а не в противнике.
 extends CharacterBody3D
 
+## Слой, который видят только камеры наблюдения. На нём лежит тело
+## игрока: из своих глаз его быть не должно, на записи — должно.
+const CAMERA_ONLY_LAYER := 1 << 9
+
 @export var walk_speed := 2.2
 @export var run_speed := 4.0
 @export var mouse_sensitivity := 0.0022
@@ -45,6 +49,8 @@ func _ready() -> void:
 	# за движение, а что делает E — другая забота, и она будет расти.
 	var interactor := Interactor.new()
 	add_child(interactor)
+
+	_build_body()
 
 	_steps = AudioStreamPlayer3D.new()
 	_steps.volume_db = -12.0
@@ -119,6 +125,41 @@ func _update_battery(delta: float) -> void:
 
 	flashlight.light_energy = energy
 	flashlight.light_color = color
+
+
+## Тело игрока. Из своих глаз его не видно, а на камерах наблюдения —
+## видно: в этом весь смысл. Разделение через слои видимости — основная
+## камера просто не рисует слой, на котором лежит тело.
+func _build_body() -> void:
+	var path := "res://assets/models/figure.glb"
+	if not ResourceLoader.exists(path):
+		return
+
+	var scene: PackedScene = load(path)
+	var body := scene.instantiate()
+	# Origin игрока — по центру капсулы, модель стоит от ног.
+	body.position = Vector3(0.0, -0.9, 0.0)
+	add_child(body)
+
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.13, 0.05, 0.06)
+	mat.roughness = 0.9
+
+	_set_body_layer(body, mat)
+
+	# Основная камера этот слой не видит — иначе собственное тело
+	# закрывало бы весь обзор изнутри головы.
+	camera.cull_mask &= ~CAMERA_ONLY_LAYER
+
+
+func _set_body_layer(node: Node, material: Material) -> void:
+	if node is MeshInstance3D:
+		var mesh := node as MeshInstance3D
+		mesh.material_override = material
+		mesh.layers = CAMERA_ONLY_LAYER
+		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	for child in node.get_children():
+		_set_body_layer(child, material)
 
 
 ## Полностью заряженная батарея. Пригодится точкам сохранения.

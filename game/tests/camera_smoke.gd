@@ -57,7 +57,9 @@ func _physics_process(delta: float) -> void:
 		3: _phase_cycle()
 		4: _phase_figure()
 		5: _phase_figure_gone()
-		6: _finish()
+		6: _phase_body_layers()
+		7: _phase_behind()
+		8: _finish()
 
 
 func _phase_initial() -> void:
@@ -176,6 +178,80 @@ func _phase_figure_gone() -> void:
 	# Ищем видимые силуэты в сцене: после разрядки их быть не должно.
 	_check(not _any_figure_visible(figure), "фигура ушла из кадра после разрядки")
 	_next(6)
+
+
+## Тело игрока должно быть невидимо изнутри его глаз и видимо
+## камерам наблюдения. Ошибка здесь заметна не сразу: собственная
+## грудная клетка закрывает пол-экрана только в определённых позах.
+func _phase_body_layers() -> void:
+	if _timer < 0.2:
+		return
+
+	var player := _house.get_node_or_null("Player")
+	if player == null:
+		_check(false, "игрок есть в сцене")
+		_next(7)
+		return
+
+	var camera := _find_camera(player)
+	_check(camera != null, "у игрока есть камера")
+
+	var body := _find_body_mesh(player)
+	_check(body != null, "у игрока есть тело для записи")
+
+	if camera == null or body == null:
+		_next(7)
+		return
+
+	_check(
+		(camera.cull_mask & body.layers) == 0,
+		"собственная камера тело не видит"
+	)
+	_check(body.layers != 0, "тело лежит на своём слое, а не на нулевом")
+
+	# Доводим монитор до камеры своей комнаты: скример «за спиной»
+	# должен сработать именно на ней, а не на любой.
+	var guard := 0
+	while _monitor.current_camera().label != "эта комната" and guard < 12:
+		_monitor.interact()
+		guard += 1
+
+	_check(
+		_monitor.current_camera().label == "эта комната",
+		"камера своей комнаты есть в списке"
+	)
+	_next(7)
+
+
+func _phase_behind() -> void:
+	if _timer < 0.3:
+		return
+	_check(
+		Game.has_flag("scare_behind"),
+		"скример «за спиной» сработал на камере своей комнаты"
+	)
+	_next(8)
+
+
+func _find_camera(node: Node) -> Camera3D:
+	if node is Camera3D:
+		return node
+	for child in node.get_children():
+		var found := _find_camera(child)
+		if found != null:
+			return found
+	return null
+
+
+## Меш тела ищем по слою: он единственный, кто не на слое по умолчанию.
+func _find_body_mesh(node: Node) -> MeshInstance3D:
+	if node is MeshInstance3D and (node as MeshInstance3D).layers != 1:
+		return node
+	for child in node.get_children():
+		var found := _find_body_mesh(child)
+		if found != null:
+			return found
+	return null
 
 
 func _find_figure_scare() -> Scare:

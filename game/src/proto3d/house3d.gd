@@ -500,6 +500,14 @@ func _build_cameras() -> void:
 			"pos": Vector3(1.2, 2.3, -7.6),
 			"look": Vector3(-1.4, 1.1, -6.4),
 		},
+		# Камера в его же комнате, направленная на монитор. Переключив
+		# на неё, игрок видит себя со спины — и монитор, показывающий
+		# монитор.
+		{
+			"label": "эта комната",
+			"pos": Vector3(-5.4, 2.2, -17.9),
+			"look": Vector3(-2.6, 1.3, -17.2),
+		},
 	]
 
 	for spot: Dictionary in spots:
@@ -621,6 +629,18 @@ func _build_scares() -> void:
 	var figure := preload("res://src/proto3d/scare_camera_figure.gd").new()
 	figure.attach(_monitor)
 	add_child(figure)
+
+	# Самый неприятный: игрок видит себя со спины, и за ней кто-то есть.
+	# Обернувшись, он не увидит ничего — проверить нельзя.
+	var behind := preload("res://src/proto3d/scare_behind.gd").new()
+	behind.attach(_monitor)
+	add_child(behind)
+
+	# Стратегия: надпись на стене коридора, меняющая решение.
+	# Стоит на пути к дальней комнате — мимо не пройти.
+	var strategy := preload("res://src/proto3d/scare_strategy.gd").new()
+	strategy.position = Vector3(0.0, 1.5, -10.2)
+	add_child(strategy)
 
 
 ## Пыль в воздухе. Видна только в луче света — именно поэтому и работает:
