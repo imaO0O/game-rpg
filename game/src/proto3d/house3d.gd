@@ -520,6 +520,12 @@ func _build_scares() -> void:
 	mirror_scare.mirror = _mirror
 	add_child(mirror_scare)
 
+	# Змея — у шкафа в первой комнате: третий по счёту, но первый,
+	# который меняет отношение к целому классу объектов в доме.
+	var snake := preload("res://src/proto3d/scare_snake.gd").new()
+	snake.position = Vector3(-1.6, 1.1, -1.2)
+	add_child(snake)
+
 
 ## Пыль в воздухе. Видна только в луче света — именно поэтому и работает:
 ## показывает, что воздух в комнате есть.

@@ -364,6 +364,44 @@ def make_suitcase():
     export(case, "suitcase.glb")
 
 
+def make_snake():
+    """Змея. Слизерин — часть характера хозяйки, поэтому змеи в доме
+    не враги, а свои: они подсказывают дорогу и открывают замки.
+
+    Тело строится по кривой: цепочка сегментов с затуханием радиуса
+    к хвосту читается как змея, а ровный цилиндр — как шланг.
+    """
+    clear_scene()
+    parts = []
+
+    segments = 26
+    length = 1.5
+    for i in range(segments):
+        t = i / float(segments - 1)
+        # Синус даёт изгиб, а сужение к хвосту — узнаваемый силуэт.
+        x = math.sin(t * math.pi * 2.2) * 0.16
+        y = -length / 2 + t * length
+        radius = 0.055 * (1.0 - t * 0.72) + 0.012
+
+        ring = cylinder("seg", radius, length / segments * 1.6, (x, y, radius), verts=10)
+        ring.rotation_euler = (math.pi / 2, 0, 0)
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+        parts.append(ring)
+
+    # Голова: чуть крупнее шеи и приподнята.
+    head_x = math.sin(0.0) * 0.16
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.062, location=(head_x, -length / 2 - 0.03, 0.075), segments=16, ring_count=10)
+    head = bpy.context.active_object
+    head.name = "head"
+    head.scale = (1.0, 1.35, 0.8)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    parts.append(head)
+
+    snake = join(parts, "Snake")
+    shade_smooth_by_angle(snake, angle=45)
+    export(snake, "snake.glb")
+
+
 def main():
     make_door()
     make_chair()
@@ -377,6 +415,7 @@ def main():
     make_shelf()
     make_helmet()
     make_suitcase()
+    make_snake()
     print("готово: модели в %s" % OUT_DIR)
 
 
