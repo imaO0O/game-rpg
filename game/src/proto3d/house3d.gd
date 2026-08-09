@@ -31,6 +31,7 @@ var _ceiling_material: StandardMaterial3D
 var _helmet_material: StandardMaterial3D
 var _stain: NoiseTexture2D
 var _micro: NoiseTexture2D
+var _mirror: Mirror
 
 
 func _ready() -> void:
@@ -463,6 +464,15 @@ func _build_scares() -> void:
 	pitstop.position = Vector3(0.0, 1.2, -4.5)
 	add_child(pitstop)
 
+	# Зеркальный — дальше по коридору, когда игрок уже расслабился
+	# после первого и решил, что понял правила.
+	var mirror_scare := preload("res://src/proto3d/scare_mirror.gd").new()
+	mirror_scare.position = Vector3(0.0, 1.2, -6.4)
+	# Ссылку выставляем до добавления в дерево: _ready сработает сразу
+	# в add_child, и после него присваивать уже поздно.
+	mirror_scare.mirror = _mirror
+	add_child(mirror_scare)
+
 
 ## Пыль в воздухе. Видна только в луче света — именно поэтому и работает:
 ## показывает, что воздух в комнате есть.
@@ -545,8 +555,14 @@ func _build_props() -> void:
 	_prop("bed", Vector3(6.4, 0.0, -11.4), PI * 0.5, _floor_material)
 	_prop("shelf", Vector3(3.4, 0.0, -13.2), 0.0, _floor_material)
 
-	# Зеркало в коридоре — под скример с запаздывающим отражением.
+	# Рама зеркала — модель, само стекло — отдельный узел с отражением.
 	_prop("mirror", Vector3(-1.42, 0.0, -6.4), PI * 0.5, _dark_material)
+
+	_mirror = Mirror.new()
+	_mirror.glass_size = Vector2(0.52, 1.14)
+	_mirror.position = Vector3(-1.38, 0.62, -6.4)
+	_mirror.rotation.y = PI * 0.5
+	add_child(_mirror)
 
 	# Двери в проёмах — приоткрытые, чтобы за ними была видна темнота.
 	_prop("door", Vector3(-0.55, 0.0, -2.2), 0.6, _floor_material)

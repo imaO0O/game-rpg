@@ -13,6 +13,8 @@ const HOUSE := preload("res://src/proto3d/house3d.tscn")
 var _house: Node3D
 var _player: CharacterBody3D
 var _scare: Scare
+var _mirror_scare: Scare
+var _mirror: Mirror
 
 var _strikes := 0
 var _resolves := 0
@@ -32,12 +34,25 @@ func _ready() -> void:
 	_check(_player != null, "игрок есть в сцене")
 	_check(_player != null and _player.is_in_group("player"), "игрок в группе player")
 
+	var scares: Array[Scare] = []
 	for child in _house.get_children():
 		if child is Scare:
-			_scare = child
-			break
+			scares.append(child)
+		if child is Mirror:
+			_mirror = child
 
-	_check(_scare != null, "скример стоит в доме")
+	_check(scares.size() >= 2, "в доме несколько скримеров (найдено: %d)" % scares.size())
+	_check(_mirror != null, "зеркало есть в коридоре")
+	_check(_mirror != null and is_zero_approx(_mirror.delay), "отражение сначала не отстаёт")
+
+	for candidate in scares:
+		if candidate.id == "pitstop":
+			_scare = candidate
+		elif candidate.id == "mirror":
+			_mirror_scare = candidate
+
+	_check(_scare != null, "скример пит-волла стоит в доме")
+	_check(_mirror_scare != null, "скример зеркала стоит в доме")
 	if _scare == null:
 		_finish()
 		return
@@ -54,7 +69,9 @@ func _physics_process(delta: float) -> void:
 		1: _phase_check_strike()
 		2: _phase_check_resolve()
 		3: _phase_check_once()
-		4: _finish()
+		4: _phase_check_mirror()
+		5: _phase_check_mirror_resolve()
+		6: _finish()
 
 
 ## Заводим игрока в триггер.
@@ -90,7 +107,36 @@ func _phase_check_once() -> void:
 	_player.global_position = _scare.global_position + Vector3(0.0, 0.0, 4.0)
 	_player.global_position = _scare.global_position
 	_check(_strikes == 1, "повторный вход скример не запускает")
+
+	# Дальше — зеркало: заводим игрока в его триггер.
+	if _mirror_scare != null:
+		_player.global_position = _mirror_scare.global_position
 	_next(4)
+
+
+## Зеркальный скример обязан реально сдвинуть задержку отражения,
+## а не просто отметиться флагом.
+func _phase_check_mirror() -> void:
+	if _timer < 0.4:
+		return
+	if _mirror == null or _mirror_scare == null:
+		_next(6)
+		return
+
+	_check(_mirror.delay > 0.1, "отражение начало отставать (задержка %.2f с)" % _mirror.delay)
+	_check(Game.has_flag("scare_mirror"), "зеркальный скример отметился флагом")
+	_next(5)
+
+
+## И вернуть его обратно — иначе зеркало останется сломанным навсегда.
+func _phase_check_mirror_resolve() -> void:
+	if _timer < _mirror_scare.strike_time + 2.0:
+		return
+	_check(
+		_mirror.delay < 0.05,
+		"отражение догнало оригинал (задержка %.2f с)" % _mirror.delay
+	)
+	_next(6)
 
 
 func _finish() -> void:
