@@ -20,6 +20,8 @@ const ROOMS := [
 	{"pos": Vector3(0, 0, -7), "size": Vector3(3, ROOM_H, 10)},
 	{"pos": Vector3(5, 0, -11), "size": Vector3(7, ROOM_H, 5)},
 	{"pos": Vector3(-4, 0, -11), "size": Vector3(4, ROOM_H, 4)},
+	# Комната Зейда: тесная, вытянутая, с одним выходом.
+	{"pos": Vector3(-4, 0, -16), "size": Vector3(4, ROOM_H, 5)},
 ]
 
 var _floor_material: StandardMaterial3D
@@ -47,6 +49,7 @@ func _ready() -> void:
 	_build_wear()
 	_build_ambience()
 	_build_memories()
+	_build_zade_room()
 	_build_scares()
 	_build_hud()
 
@@ -468,6 +471,31 @@ func _wear_patch(pos: Vector3, size: Vector3, strength: float) -> void:
 	decal.lower_fade = 0.6
 	decal.normal_fade = 0.35
 	add_child(decal)
+
+
+## Комната Зейда: доска с фотографиями и стул напротив неё.
+## Обстановка расставлена так, чтобы взгляд шёл по цепочке —
+## сначала стул, потом то, на что он смотрит.
+func _build_zade_room() -> void:
+	var room := ZadeRoom.new()
+	room.board_centre = Vector3(-4.0, 1.45, -18.3)
+	add_child(room)
+
+	# Стул стоит вплотную к доске и развёрнут к ней: здесь сидели долго.
+	_prop("chair", Vector3(-4.0, 0.0, -16.4), 0.0, _floor_material)
+	_prop("shelf", Vector3(-5.6, 0.0, -17.4), PI * 0.5, _floor_material)
+	_prop("cardboard_box", Vector3(-2.7, 0.0, -17.9), 0.5, _floor_material)
+	_prop("suitcase", Vector3(-2.6, 0.0, -15.4), -0.3, _dark_material)
+
+	# Единственный свет — лампа сбоку от доски, а не перед ней:
+	# висящая по центру била бы прямо в глаза входящему.
+	_lamp(Vector3(-5.3, 1.75, -17.6), Color(1.0, 0.72, 0.42), 0.7, 3.4)
+
+	# Осколок здесь один, и он про него, а не про города.
+	var shard := MemoryObject.new()
+	shard.id = "ryazan_04"
+	shard.position = Vector3(-4.0, 0.5, -16.4)
+	add_child(shard)
 
 
 ## Интерфейс. Ищем игрока в сцене, а не требуем ссылку: дом строится
