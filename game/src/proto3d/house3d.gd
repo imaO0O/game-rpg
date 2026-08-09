@@ -85,10 +85,11 @@ func _build_materials() -> void:
 	_dark_material.albedo_color = Color(0.05, 0.05, 0.06)
 	_dark_material.roughness = 0.9
 
-	# Плинтус светлее пола и темнее стены — так стык читается как деталь.
+	# Плинтус заметно темнее стены — иначе он сливается с ней и стык
+	# всё равно выглядит острым.
 	_trim_material = StandardMaterial3D.new()
-	_trim_material.albedo_color = Color(0.20, 0.17, 0.14)
-	_trim_material.roughness = 0.55
+	_trim_material.albedo_color = Color(0.13, 0.11, 0.09)
+	_trim_material.roughness = 0.85
 
 	# Бумага почти не блестит и слегка светлее всего в комнате.
 	_paper_material = StandardMaterial3D.new()
@@ -227,8 +228,12 @@ func _build_environment() -> void:
 
 	# Затенение в углах: без него интерьер выглядит нарисованным.
 	env.ssao_enabled = true
-	env.ssao_intensity = 3.0
-	env.ssao_radius = 1.4
+	env.ssao_intensity = 2.8
+	env.ssao_radius = 1.2
+	# Контактные тени в углах — то, чем обжитая комната отличается
+	# от коробки. Без них стык стены и пола выглядит нарисованным.
+	env.ssao_power = 1.5
+	env.ssao_detail = 0.6
 
 	env.ssil_enabled = true
 	env.ssil_intensity = 0.6
@@ -286,16 +291,35 @@ func _lamp(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
 	# первое, что выдаёт движок вместо комнаты.
 	light.light_size = 0.35
 	light.shadow_blur = 1.8
-	light.light_volumetric_fog_energy = 1.6
+	# Объёмный вклад слабый: при высоком лампа рисует вокруг себя мягкое
+	# пятно, которое висит поверх сцены и не связано с геометрией —
+	# первое, что бросается в глаза как дефект.
+	light.light_volumetric_fog_energy = 0.35
 	# Скримеры гасят весь свет разом — им нужно знать, что гасить.
 	light.add_to_group("house_light")
 	add_child(light)
 
-	# Сам плафон: источник должен быть виден, иначе свет «ниоткуда».
+	# Арматура: шнур, патрон, плафон. Голая светящаяся сфера читается
+	# как источник света из движка, а не как лампа в комнате.
+	var fixture_path := "res://assets/models/ceiling_lamp.glb"
+	if ResourceLoader.exists(fixture_path):
+		var scene: PackedScene = load(fixture_path)
+		var fixture := scene.instantiate()
+		# Модель свисает от точки крепления, поэтому вешаем её к потолку.
+		fixture.position = Vector3(pos.x, pos.y + 0.34, pos.z)
+
+		var enamel := StandardMaterial3D.new()
+		enamel.albedo_color = Color(0.72, 0.70, 0.66)
+		enamel.roughness = 0.35
+		enamel.metallic = 0.2
+		_apply_material(fixture, enamel)
+		add_child(fixture)
+
+	# Сама лампочка внутри плафона.
 	var bulb := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
-	sphere.radius = 0.07
-	sphere.height = 0.14
+	sphere.radius = 0.045
+	sphere.height = 0.09
 	bulb.mesh = sphere
 	bulb.position = pos
 
@@ -303,7 +327,7 @@ func _lamp(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
 	glow.albedo_color = color
 	glow.emission_enabled = true
 	glow.emission = color
-	glow.emission_energy_multiplier = 6.0
+	glow.emission_energy_multiplier = 4.0
 	bulb.material_override = glow
 	add_child(bulb)
 
@@ -356,8 +380,10 @@ func _slab(centre: Vector3, size: Vector3, material: Material) -> StaticBody3D:
 ## блокаута: в жилом помещении такого стыка не бывает. Плинтус ловит
 ## блик и затенение, и комната сразу читается как построенная.
 func _build_trim() -> void:
-	const H := 0.09
-	const D := 0.022
+	# Выше и толще, чем кажется правильным: при девяти сантиметрах
+	# плинтус в кадре не читался вовсе и стык оставался острым.
+	const H := 0.13
+	const D := 0.03
 
 	for room: Dictionary in ROOMS:
 		var pos: Vector3 = room.pos

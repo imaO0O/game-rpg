@@ -438,6 +438,42 @@ def make_figure():
     export(figure, "figure.glb")
 
 
+def make_ceiling_lamp():
+    """Потолочная арматура: шнур, патрон, эмалированный плафон.
+
+    Голая светящаяся сфера читается как источник света из движка,
+    а не как лампа. Плафон нужен ещё и затем, чтобы свет падал
+    конусом вниз, а не ровным шаром во все стороны.
+    """
+    clear_scene()
+    parts = []
+
+    # Шнур от потолка.
+    parts.append(cylinder("cord", 0.006, 0.34, (0, 0, 0.17), verts=6))
+    # Патрон.
+    parts.append(cylinder("socket", 0.028, 0.07, (0, 0, -0.035), verts=12))
+
+    # Плафон-конус, раскрытый вниз.
+    bpy.ops.mesh.primitive_cone_add(
+        radius1=0.055, radius2=0.17, depth=0.16, location=(0, 0, -0.14), vertices=24
+    )
+    shade = bpy.context.active_object
+    shade.name = "shade"
+    parts.append(shade)
+
+    # Ободок по краю плафона: ловит блик и отделяет край от темноты.
+    bpy.ops.mesh.primitive_torus_add(
+        major_radius=0.17, minor_radius=0.006, location=(0, 0, -0.22), major_segments=24, minor_segments=6
+    )
+    rim = bpy.context.active_object
+    rim.name = "rim"
+    parts.append(rim)
+
+    lamp = join(parts, "CeilingLamp")
+    shade_smooth_by_angle(lamp, angle=40)
+    export(lamp, "ceiling_lamp.glb")
+
+
 def main():
     make_door()
     make_chair()
@@ -453,6 +489,7 @@ def main():
     make_suitcase()
     make_snake()
     make_figure()
+    make_ceiling_lamp()
     print("готово: модели в %s" % OUT_DIR)
 
 
