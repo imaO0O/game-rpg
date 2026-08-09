@@ -34,10 +34,12 @@ def clear_scene():
 
 def box(name, size, location=(0, 0, 0), bevel=0.004):
     """Скруглённый параллелепипед — основа всей мебели."""
+    # primitive_cube_add(size=1) даёт куб со стороной 1, а не 2:
+    # масштаб равен нужному размеру, делить пополам не надо.
     bpy.ops.mesh.primitive_cube_add(size=1, location=location)
     obj = bpy.context.active_object
     obj.name = name
-    obj.scale = (size[0] / 2, size[1] / 2, size[2] / 2)
+    obj.scale = (size[0], size[1], size[2])
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
     if bevel > 0:

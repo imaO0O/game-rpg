@@ -8,12 +8,14 @@ const HOUSE := preload("res://src/proto3d/house3d.tscn")
 const OUT_DIR := "user://shots3d"
 
 ## Точка съёмки: где стоит игрок и куда смотрит.
+## Направления подобраны так, чтобы в кадр попадала мебель, а не голая стена.
 const VIEWS := [
-	{"name": "a_room", "pos": Vector3(-1.2, 0.9, 1.2), "yaw": -0.6, "pitch": -0.05},
-	{"name": "b_table", "pos": Vector3(0.2, 0.9, 1.5), "yaw": -0.9, "pitch": -0.15},
-	{"name": "c_corridor", "pos": Vector3(0.0, 0.9, -2.6), "yaw": 0.0, "pitch": -0.02},
-	{"name": "d_deep", "pos": Vector3(0.0, 0.9, -7.5), "yaw": 0.15, "pitch": -0.05},
-	{"name": "e_side", "pos": Vector3(3.0, 0.9, -11.0), "yaw": 1.4, "pitch": -0.05},
+	{"name": "a_table", "pos": Vector3(-1.1, 0.9, 1.5), "yaw": -1.15, "pitch": -0.12},
+	{"name": "b_wardrobe", "pos": Vector3(0.4, 0.9, 0.8), "yaw": 0.87, "pitch": -0.05},
+	{"name": "c_door", "pos": Vector3(0.0, 0.9, -0.4), "yaw": 0.0, "pitch": -0.03},
+	{"name": "d_corridor", "pos": Vector3(0.0, 0.9, -4.2), "yaw": 0.0, "pitch": -0.02},
+	{"name": "e_boxes", "pos": Vector3(0.6, 0.9, -7.4), "yaw": 0.35, "pitch": -0.12},
+	{"name": "f_far_room", "pos": Vector3(3.2, 0.9, -10.4), "yaw": 1.25, "pitch": -0.04},
 ]
 
 var _level: Node3D
