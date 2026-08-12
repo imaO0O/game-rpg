@@ -12,7 +12,7 @@ const OUT_DIR := "user://shots3d"
 const VIEWS := [
 	# Дальше по Z, чтобы плафон вошёл в кадр целиком: с прежней точки
 	# он упирался в верхний край.
-	{"name": "a_table", "pos": Vector3(-1.1, 0.9, 1.95), "yaw": -1.15, "pitch": -0.06},
+	{"name": "a_table", "pos": Vector3(0.3, 1.15, 1.5), "yaw": -0.85, "pitch": -0.35},
 	{"name": "b_wardrobe", "pos": Vector3(0.4, 0.9, 0.8), "yaw": 0.87, "pitch": -0.05},
 	{"name": "c_door", "pos": Vector3(0.0, 0.9, -0.4), "yaw": 0.0, "pitch": -0.03},
 	{"name": "d_corridor", "pos": Vector3(0.0, 0.9, -4.2), "yaw": 0.0, "pitch": -0.02},

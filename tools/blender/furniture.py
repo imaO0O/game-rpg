@@ -100,6 +100,15 @@ def export(obj, filename):
     конверсию: одно преобразование вместо двух.
     """
     os.makedirs(OUT_DIR, exist_ok=True)
+
+    # Забираем всё, что осталось в сцене, а не только выделенное.
+    # Объединение частей срабатывало не всегда, и в файл уходила
+    # одна столешница вместо стола — молча, без единой ошибки.
+    meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+    if len(meshes) > 1:
+        print("ВНИМАНИЕ: %s собран из %d кусков, объединяю" % (filename, len(meshes)))
+        obj = join(meshes, obj.name)
+
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
@@ -115,7 +124,11 @@ def export(obj, filename):
         export_apply=True,
         export_yup=False,
     )
-    print("сохранено: %s" % path)
+
+    verts = len(obj.data.vertices)
+    dims = obj.dimensions
+    print("сохранено: %s — вершин %d, габариты %.2f x %.2f x %.2f"
+          % (filename, verts, dims.x, dims.y, dims.z))
 
 
 # --- Модели ------------------------------------------------------------
@@ -474,6 +487,122 @@ def make_ceiling_lamp():
     export(lamp, "ceiling_lamp.glb")
 
 
+def make_mug():
+    """Кружка. Кофе — сквозная тема, и брошенная кружка говорит
+    о жильце больше, чем целый шкаф."""
+    clear_scene()
+    parts = []
+
+    body = cylinder("body", 0.042, 0.095, (0, 0, 0.047), verts=20)
+    hollow = cylinder("hollow", 0.036, 0.085, (0, 0, 0.055), verts=20)
+    modifier = body.modifiers.new(name="Cut", type="BOOLEAN")
+    modifier.operation = "DIFFERENCE"
+    modifier.object = hollow
+    bpy.context.view_layer.objects.active = body
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    bpy.data.objects.remove(hollow, do_unlink=True)
+    parts.append(body)
+
+    # Ручка: половина тора, срезанная плоскостью.
+    bpy.ops.mesh.primitive_torus_add(
+        major_radius=0.032, minor_radius=0.006,
+        location=(0.055, 0, 0.05), rotation=(0, math.pi / 2, 0),
+        major_segments=16, minor_segments=8
+    )
+    handle = bpy.context.active_object
+    handle.name = "handle"
+    parts.append(handle)
+
+    mug = join(parts, "Mug")
+    shade_smooth_by_angle(mug, angle=45)
+    export(mug, "mug.glb")
+
+
+def make_book():
+    """Книга. Лежит, а не стоит: лежащая читается как оставленная,
+    стоящая — как часть обстановки."""
+    clear_scene()
+    parts = [
+        box("cover", (0.15, 0.21, 0.032), (0, 0, 0.016), bevel=0.002),
+        # Блок страниц чуть уже обложки — отсюда и тень по краю.
+        box("pages", (0.142, 0.2, 0.024), (0, 0, 0.016), bevel=0.001),
+        box("spine", (0.012, 0.21, 0.034), (-0.075, 0, 0.017), bevel=0.003),
+    ]
+    book = join(parts, "Book")
+    export(book, "book.glb")
+
+
+def make_bottle():
+    clear_scene()
+    parts = [
+        cylinder("body", 0.035, 0.19, (0, 0, 0.095), verts=16),
+        cylinder("neck", 0.014, 0.08, (0, 0, 0.225), verts=12),
+        cylinder("cap", 0.016, 0.022, (0, 0, 0.272), verts=12),
+    ]
+    # Скос от плеча к горлышку.
+    bpy.ops.mesh.primitive_cone_add(
+        radius1=0.035, radius2=0.014, depth=0.05, location=(0, 0, 0.215), vertices=16
+    )
+    shoulder = bpy.context.active_object
+    shoulder.name = "shoulder"
+    parts.append(shoulder)
+
+    bottle = join(parts, "Bottle")
+    shade_smooth_by_angle(bottle, angle=40)
+    export(bottle, "bottle.glb")
+
+
+def make_frame():
+    """Рамка с фотографией. Держатель осколков памяти: сама рамка
+    из кода, а снимок внутри подставляется из private/."""
+    clear_scene()
+    parts = [
+        box("frame", (0.19, 0.025, 0.25), (0, 0, 0.125), bevel=0.004),
+        # Углубление под снимок: без него рамка — просто дощечка.
+        box("photo", (0.15, 0.005, 0.21), (0, -0.014, 0.125), bevel=0.001),
+        # Подставка сзади, чтобы рамка стояла под углом.
+        box("stand", (0.03, 0.06, 0.16), (0, 0.05, 0.08), bevel=0.003),
+    ]
+    frame = join(parts, "PhotoFrame")
+    export(frame, "photo_frame.glb")
+
+
+def make_clock():
+    """Настенные часы. В хорроре они нужны затем, чтобы игрок
+    заметил, что стрелка не двигается."""
+    clear_scene()
+    parts = [
+        cylinder("case", 0.13, 0.035, (0, 0, 0), (math.pi / 2, 0, 0), verts=28),
+        cylinder("face", 0.118, 0.005, (0, -0.019, 0), (math.pi / 2, 0, 0), verts=28),
+        box("hand_h", (0.012, 0.006, 0.06), (0, -0.024, 0.03), bevel=0.001),
+        box("hand_m", (0.008, 0.006, 0.09), (0.035, -0.024, 0.01), bevel=0.001),
+    ]
+    clock = join(parts, "WallClock")
+    shade_smooth_by_angle(clock, angle=40)
+    export(clock, "wall_clock.glb")
+
+
+def make_ticket():
+    """Билет. Катя была почти во всех городах России — стопка билетов
+    рассказывает об этом без единого слова."""
+    clear_scene()
+    parts = []
+    # Несколько листков со сдвигом: одинокий билет читается как мусор.
+    for i in range(4):
+        sheet = box(
+            "ticket",
+            (0.075, 0.14, 0.0012),
+            (i * 0.004, i * 0.003, 0.0006 + i * 0.0013),
+            bevel=0.0004,
+        )
+        sheet.rotation_euler = (0, 0, math.radians(i * 4 - 6))
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+        parts.append(sheet)
+
+    tickets = join(parts, "Tickets")
+    export(tickets, "tickets.glb")
+
+
 def main():
     make_door()
     make_chair()
@@ -490,6 +619,12 @@ def main():
     make_snake()
     make_figure()
     make_ceiling_lamp()
+    make_mug()
+    make_book()
+    make_bottle()
+    make_frame()
+    make_clock()
+    make_ticket()
     print("готово: модели в %s" % OUT_DIR)
 
 

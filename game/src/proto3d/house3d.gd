@@ -1,4 +1,4 @@
-## Прототип дома Зейда в 3D от первого лица.
+﻿## Прототип дома Зейда в 3D от первого лица.
 ##
 ## Цель — не игра, а честный ответ на вопрос «как это может выглядеть».
 ## Поэтому здесь всё, от чего зависит впечатление: настоящие PBR-материалы,
@@ -31,6 +31,7 @@ var _trim_material: StandardMaterial3D
 var _paper_material: StandardMaterial3D
 var _ceiling_material: StandardMaterial3D
 var _helmet_material: StandardMaterial3D
+var _furniture_material: StandardMaterial3D
 var _stain: NoiseTexture2D
 var _micro: NoiseTexture2D
 var _mirror: Mirror
@@ -107,6 +108,18 @@ func _build_materials() -> void:
 	)
 	_ceiling_material.albedo_color = Color(0.62, 0.60, 0.58)
 	_ceiling_material.roughness = 1.0
+
+	# Мебель светлее пола. С тем же материалом стол сливался с досками
+	# и пропадал целиком: предметы на нём выглядели висящими в воздухе.
+	_furniture_material = _pbr(
+		"res://assets/pbr/WoodFloor043/WoodFloor043_1K-JPG_Color.jpg",
+		"res://assets/pbr/WoodFloor043/WoodFloor043_1K-JPG_NormalGL.jpg",
+		"res://assets/pbr/WoodFloor043/WoodFloor043_1K-JPG_Roughness.jpg",
+		"",
+		Vector3(1.6, 1.6, 1.6)
+	)
+	_furniture_material.albedo_color = Color(1.75, 1.62, 1.45)
+	_furniture_material.roughness = 0.55
 
 	# Единственная красная вещь в доме (CONCEPT_3D.md, «Тон»).
 	# Лак должен бликовать: шлем обязан ловить взгляд.
@@ -465,6 +478,33 @@ func _build_clutter() -> void:
 			_dark_material
 		)
 
+	# Мелочь на поверхностях. Ровно она отличает комнату, где живут,
+	# от комнаты, куда поставили мебель: взгляду нужно за что цепляться
+	# на каждом плане, а не только на дальнем.
+	_prop("mug", Vector3(1.35, 0.77, 0.1), 0.7, _paper_material)
+	_prop("book", Vector3(1.85, 0.77, 0.55), -0.4, _furniture_material)
+	_prop("book", Vector3(1.9, 0.79, 0.52), 0.3, _dark_material)
+	_prop("bottle", Vector3(-2.3, 0.0, 1.75), 0.0, _dark_material)
+	_prop("bottle", Vector3(-2.15, 0.0, 1.55), 0.9, _dark_material)
+	_prop("photo_frame", Vector3(2.15, 0.79, -1.45), PI * 0.85, _floor_material)
+	_prop("mug", Vector3(-1.95, 0.92, -1.05), -0.5, _paper_material)
+
+	# Часы в коридоре: их вешают затем, чтобы игрок заметил,
+	# что стрелки стоят.
+	_prop("wall_clock", Vector3(1.42, 1.85, -6.2), -PI * 0.5, _dark_material)
+
+	# Дальняя комната — обжитая: кружка у кровати, книга, бутылка.
+	_prop("mug", Vector3(5.9, 0.44, -12.3), 0.2, _paper_material)
+	_prop("book", Vector3(6.05, 0.0, -10.6), 1.2, _furniture_material)
+	_prop("bottle", Vector3(7.4, 0.0, -11.9), 0.0, _dark_material)
+	_prop("tickets", Vector3(3.55, 0.79, -13.15), 0.5, _paper_material)
+
+	# Комната Зейда: он тут жил, а не только следил.
+	_prop("mug", Vector3(-2.6, 1.02, -17.5), -0.8, _paper_material)
+	_prop("bottle", Vector3(-5.6, 0.0, -18.3), 0.4, _dark_material)
+	_prop("bottle", Vector3(-5.45, 0.0, -18.1), 1.1, _dark_material)
+	_prop("book", Vector3(-4.2, 0.0, -18.6), -0.9, _furniture_material)
+
 
 ## Следы жизни: затёртости на высоте руки, пятна под мебелью,
 ## тёмные полосы вдоль проходов.
@@ -565,8 +605,8 @@ func _build_zade_room() -> void:
 	add_child(room)
 
 	# Стул стоит вплотную к доске и развёрнут к ней: здесь сидели долго.
-	_prop("chair", Vector3(-4.0, 0.0, -16.4), 0.0, _floor_material)
-	_prop("shelf", Vector3(-5.6, 0.0, -17.4), PI * 0.5, _floor_material)
+	_prop("chair", Vector3(-4.0, 0.0, -16.4), 0.0, _furniture_material)
+	_prop("shelf", Vector3(-5.6, 0.0, -17.4), PI * 0.5, _furniture_material)
 	_prop("cardboard_box", Vector3(-2.7, 0.0, -17.9), 0.5, _floor_material)
 	_prop("suitcase", Vector3(-2.6, 0.0, -15.4), -0.3, _dark_material)
 
@@ -598,11 +638,14 @@ func _build_hud() -> void:
 ## Осколки памяти по дому. Идентификаторы те же, что в двумерной
 ## версии: каталог, сохранение и подписи переиспользуются целиком.
 func _build_memories() -> void:
+	# Осколок — конкретная вещь, а не светящаяся рамка. Кружка, стопка
+	# билетов, книга, фотография: каждая говорит о хозяйке сама,
+	# ещё до того, как игрок прочтёт подпись.
 	var spots := [
-		{"id": "ryazan_01", "pos": Vector3(1.6, 0.77, 0.7), "model": ""},
-		{"id": "ryazan_02", "pos": Vector3(-2.0, 0.9, -1.2), "model": ""},
-		{"id": "ryazan_03", "pos": Vector3(0.4, 0.0, -8.2), "model": ""},
-		{"id": "ryazan_05", "pos": Vector3(6.2, 0.55, -12.6), "model": ""},
+		{"id": "ryazan_01", "pos": Vector3(1.6, 0.77, 0.7), "model": "mug"},
+		{"id": "ryazan_02", "pos": Vector3(-2.0, 0.92, -1.2), "model": "tickets"},
+		{"id": "ryazan_03", "pos": Vector3(0.4, 0.0, -8.2), "model": "book"},
+		{"id": "ryazan_05", "pos": Vector3(6.2, 0.55, -12.6), "model": "photo_frame"},
 	]
 
 	for spot: Dictionary in spots:
@@ -749,10 +792,14 @@ func _cylinder(pos: Vector3, radius: float, height: float, material: Material) -
 ## Пустой интерьер читается как тестовая сцена, сколько на него
 ## ни вешай света, а коробки вместо мебели — как заглушка.
 func _build_props() -> void:
-	_prop("table", Vector3(1.6, 0.0, 0.4), 0.0, _floor_material)
-	_prop("chair", Vector3(1.6, 0.0, 1.15), PI, _floor_material)
-	_prop("chair", Vector3(0.75, 0.0, 0.4), -PI * 0.5, _floor_material)
-	_prop("wardrobe", Vector3(-2.0, 0.0, -1.2), PI * 0.5, _floor_material)
+	# Стол собран из плит, а не взят моделью: экспорт table.glb давал
+	# файл нормального размера, но в сцене он не появлялся, а стулья
+	# из того же скрипта работали. Разбираться дороже, чем собрать
+	# из семи коробок — а заодно у стола появилась коллизия.
+	_build_table(Vector3(1.6, 0.0, 0.4))
+	_prop("chair", Vector3(1.6, 0.0, 1.15), PI, _furniture_material)
+	_prop("chair", Vector3(0.75, 0.0, 0.4), -PI * 0.5, _furniture_material)
+	_prop("wardrobe", Vector3(-2.0, 0.0, -1.2), PI * 0.5, _furniture_material)
 	_prop("floor_lamp", Vector3(-1.9, 0.0, 1.4), 0.0, _dark_material)
 
 	_prop("cardboard_box", Vector3(-0.9, 0.0, -5.5), 0.3, _floor_material)
@@ -772,18 +819,18 @@ func _build_props() -> void:
 
 	# Стеллаж и то, что стоит на нём: шлем и чемодан рассказывают,
 	# чей это дом, быстрее любой записки.
-	_prop("shelf", Vector3(2.3, 0.0, -1.55), PI, _floor_material)
+	_prop("shelf", Vector3(2.3, 0.0, -1.55), PI, _furniture_material)
 	_prop("helmet", Vector3(2.15, 1.22, -1.5), 0.4, _helmet_material)
 	_prop("suitcase", Vector3(-2.05, 0.0, 0.9), 0.25, _dark_material)
 
 	# Спальня в дальней комнате.
-	_prop("bed", Vector3(6.4, 0.0, -11.4), PI * 0.5, _floor_material)
-	_prop("shelf", Vector3(3.4, 0.0, -13.2), 0.0, _floor_material)
+	_prop("bed", Vector3(6.4, 0.0, -11.4), PI * 0.5, _furniture_material)
+	_prop("shelf", Vector3(3.4, 0.0, -13.2), 0.0, _furniture_material)
 
 	# Шкаф в глубине комнаты, между входом и дальней лампой: срезает
 	# часть света и даёт клин тени. Не у самого входа — там он просто
 	# упирался бы в лицо входящему.
-	_prop("wardrobe", Vector3(6.4, 0.0, -12.4), -PI * 0.35, _floor_material)
+	_prop("wardrobe", Vector3(6.4, 0.0, -12.4), -PI * 0.35, _furniture_material)
 
 	# Рама зеркала — модель, само стекло — отдельный узел с отражением.
 	# Рама деревянная: плоский чёрный материал читался как дыра в стене,
@@ -804,6 +851,23 @@ func _build_props() -> void:
 	for z in [-2.2, -12.0]:
 		_slab(Vector3(-0.95, 1.05, z), Vector3(0.12, 2.1, 0.12), _dark_material)
 		_slab(Vector3(0.95, 1.05, z), Vector3(0.12, 2.1, 0.12), _dark_material)
+
+
+## Стол: столешница, две царги и четыре ножки.
+func _build_table(pos: Vector3) -> void:
+	const TOP_H := 0.74
+	_slab(pos + Vector3(0.0, TOP_H + 0.025, 0.0), Vector3(1.3, 0.05, 0.8), _furniture_material)
+
+	for dz in [-0.34, 0.34]:
+		_slab(pos + Vector3(0.0, TOP_H - 0.06, dz), Vector3(1.18, 0.08, 0.06), _furniture_material)
+
+	for dx in [-0.58, 0.58]:
+		for dz in [-0.33, 0.33]:
+			_slab(
+				pos + Vector3(dx, TOP_H * 0.5, dz),
+				Vector3(0.06, TOP_H, 0.06),
+				_furniture_material
+			)
 
 
 ## Ставит модель и вешает на неё материал: из Blender геометрия приходит

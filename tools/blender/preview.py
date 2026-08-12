@@ -112,7 +112,23 @@ def preview_model(path):
         print("ПУСТО: в %s нет мешей" % name)
         return
 
+    # Берём все куски, а не первый: раньше превью показывало одну
+    # столешницу вместо стола и выглядело как сломанная модель,
+    # хотя ломался только инструмент проверки.
     obj = imported[0]
+    if len(imported) > 1:
+        for part in imported:
+            part.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.join()
+        obj = bpy.context.active_object
+    # Модели экспортируются повёрнутыми под систему координат игры,
+    # где вверх — это Y. В студии Blender вверх по Z, поэтому без
+    # обратного поворота стол лежал ножками под полом и выглядел
+    # как одна столешница.
+    obj.rotation_euler = (math.pi / 2, 0, 0)
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+
     verts = len(obj.data.vertices)
     dims = obj.dimensions
     print("%s: вершин %d, габариты %.2f x %.2f x %.2f" % (name, verts, dims.x, dims.y, dims.z))
