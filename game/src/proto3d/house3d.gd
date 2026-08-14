@@ -119,8 +119,11 @@ func _build_materials() -> void:
 		"",
 		Vector3(1.6, 1.6, 1.6)
 	)
-	_furniture_material.albedo_color = Color(1.75, 1.62, 1.45)
-	_furniture_material.roughness = 0.55
+	# Albedo выше единицы физически невозможен: поверхность отражала
+	# больше света, чем на неё падало, и дерево шло лакированной
+	# полосой-бликом. Ниже единицы и глуше — получается патина.
+	_furniture_material.albedo_color = Color(1.0, 0.95, 0.85)
+	_furniture_material.roughness = 0.7
 
 	# Техника: тёмная, но не чёрная. Чистый чёрный в кадре читается
 	# как дыра или заглушка, а не как предмет.
@@ -322,7 +325,7 @@ func _build_lights() -> void:
 ## Источник без арматуры. Нужен там, где свет мотивирован соседним
 ## предметом — ночник у кровати, подсветка часов, — и подвешивать
 ## к потолку плафон было бы враньём.
-func _point_light(pos: Vector3, color: Color, energy: float, range_m: float, falloff := 2.0) -> void:
+func _point_light(pos: Vector3, color: Color, energy: float, range_m: float, falloff := 2.0, size := 0.18) -> void:
 	var light := OmniLight3D.new()
 	light.position = pos
 	light.light_color = color
@@ -331,7 +334,9 @@ func _point_light(pos: Vector3, color: Color, energy: float, range_m: float, fal
 	# Круче спад — компактнее пятно. Ночник с пологим затуханием
 	# расплывался по всей стене.
 	light.omni_attenuation = falloff
-	light.light_size = 0.18
+	# Крупнее источник — мягче край пятна. Точечный в упор к стене
+	# рисует резкую сингулярность.
+	light.light_size = size
 	light.shadow_enabled = true
 	light.shadow_blur = 1.6
 	light.light_volumetric_fog_energy = 0.25
@@ -535,7 +540,10 @@ func _build_clutter() -> void:
 	# часы просто не читались, и коридор выглядел пустым тупиком.
 	_prop("wall_clock", Vector3(1.42, 1.85, -6.2), -PI * 0.5, _paper_material)
 	# Своя подсветка: без неё циферблат теряется даже светлым.
-	_point_light(Vector3(1.15, 1.85, -6.2), Color(1.0, 0.88, 0.7), 0.25, 1.6)
+	# Источник вынесен в комнату, а не прижат к стене: в двадцати
+	# сантиметрах он давал точку-сингулярность, а сами часы оставались
+	# в его же тени и читались чёрным силуэтом в белом ореоле.
+	_point_light(Vector3(0.85, 1.85, -6.2), Color(1.0, 0.88, 0.7), 0.14, 1.6, 2.0, 0.3)
 
 	# Дальняя комната — обжитая: кружка у кровати, книга, бутылка.
 	_prop("mug", Vector3(5.9, 0.44, -12.3), 0.2, _paper_material)
