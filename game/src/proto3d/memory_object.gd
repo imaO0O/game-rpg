@@ -63,7 +63,12 @@ func _build_visual() -> void:
 		var path := "res://assets/models/%s.glb" % model
 		if ResourceLoader.exists(path):
 			var scene: PackedScene = load(path)
-			add_child(scene.instantiate())
+			var node := scene.instantiate()
+			# Из Blender модели приходят без материалов намеренно.
+			# Без назначения предмет рендерится тёмным кубом и читается
+			# как заглушка, а не как вещь, которую хочется взять.
+			_paint(node, _object_material())
+			add_child(node)
 			return
 
 	# Запасной вид: рамка с фотографией. Работает, пока нет модели.
@@ -81,6 +86,22 @@ func _build_visual() -> void:
 	mat.emission_energy_multiplier = 0.35
 	frame.material_override = mat
 	add_child(frame)
+
+
+## Светлее окружения: осколок должен выделяться среди обстановки,
+## иначе его не отличить от декорации.
+func _object_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.58, 0.55, 0.5)
+	mat.roughness = 0.45
+	return mat
+
+
+func _paint(node: Node, material: Material) -> void:
+	if node is MeshInstance3D:
+		(node as MeshInstance3D).material_override = material
+	for child in node.get_children():
+		_paint(child, material)
 
 
 func caption() -> String:

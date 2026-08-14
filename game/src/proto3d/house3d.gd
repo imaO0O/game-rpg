@@ -125,9 +125,11 @@ func _build_materials() -> void:
 	# Техника: тёмная, но не чёрная. Чистый чёрный в кадре читается
 	# как дыра или заглушка, а не как предмет.
 	_appliance_material = StandardMaterial3D.new()
-	_appliance_material.albedo_color = Color(0.14, 0.14, 0.15)
-	_appliance_material.roughness = 0.4
-	_appliance_material.metallic = 0.25
+	# 0.14 всё ещё читалось чёрным кубом на светлом столе. Техника
+	# должна быть темнее дерева, но оставаться предметом.
+	_appliance_material.albedo_color = Color(0.26, 0.26, 0.28)
+	_appliance_material.roughness = 0.35
+	_appliance_material.metallic = 0.3
 
 	# Единственная красная вещь в доме (CONCEPT_3D.md, «Тон»).
 	# Лак должен бликовать: шлем обязан ловить взгляд.
@@ -276,7 +278,10 @@ func _build_environment() -> void:
 	# белый шар, и источник света перестаёт читаться как предмет.
 	env.glow_intensity = 0.42
 	env.glow_bloom = 0.08
-	env.glow_hdr_threshold = 1.25
+	# Порог выше: при 1.25 в него пробивались обычные лампы, и каждая
+	# превращалась в белое пятно. Свечение должно доставаться только
+	# тому, что действительно ярче всего в кадре.
+	env.glow_hdr_threshold = 1.7
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
 
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
@@ -301,27 +306,31 @@ func _build_lights() -> void:
 	_lamp(Vector3(0.0, 2.35, -9.0), Color(0.5, 0.68, 1.0), 1.1, 5.5)
 	# Вглубь и повыше: стоя у входа, лампа била прямо в объектив
 	# и выжигала весь кадр. Свет должен быть в глубине, а не в лицо.
-	# Энергия выше комнатной: шкаф перед лампой съедает часть света,
-	# и при прежних 0.9 до входа не доходило почти ничего.
-	_lamp(Vector3(7.5, 2.6, -13.0), Color(1.0, 0.5, 0.3), 1.4, 5.2)
+	# Шкаф перед лампой съедает часть света, но добирать это энергией
+	# нельзя: при 1.4 лампа пробивала порог свечения и превращалась
+	# в белое пятно. Вместо этого — вторая слабая точка ниже.
+	_lamp(Vector3(7.5, 2.6, -13.0), Color(1.0, 0.5, 0.3), 0.95, 5.2)
+	_point_light(Vector3(7.2, 0.9, -12.2), Color(1.0, 0.55, 0.35), 0.45, 3.2)
 
 	# Ночник у кровати: без него правая половина дальней комнаты была
 	# чернотой с красным бликом, и кадр читался как самый пустой в доме.
 	# Без арматуры — потолочный плафон на высоте 1.3 висел бы посреди
 	# комнаты ни на чём.
-	_point_light(Vector3(6.4, 1.15, -11.9), Color(1.0, 0.78, 0.52), 1.2, 3.5)
+	_point_light(Vector3(6.4, 1.15, -11.9), Color(1.0, 0.78, 0.52), 0.7, 3.5, 3.0)
 
 
 ## Источник без арматуры. Нужен там, где свет мотивирован соседним
 ## предметом — ночник у кровати, подсветка часов, — и подвешивать
 ## к потолку плафон было бы враньём.
-func _point_light(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
+func _point_light(pos: Vector3, color: Color, energy: float, range_m: float, falloff := 2.0) -> void:
 	var light := OmniLight3D.new()
 	light.position = pos
 	light.light_color = color
 	light.light_energy = energy
 	light.omni_range = range_m
-	light.omni_attenuation = 2.0
+	# Круче спад — компактнее пятно. Ночник с пологим затуханием
+	# расплывался по всей стене.
+	light.omni_attenuation = falloff
 	light.light_size = 0.18
 	light.shadow_enabled = true
 	light.shadow_blur = 1.6
@@ -382,7 +391,7 @@ func _lamp(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
 	glow.emission = color
 	# Не выше: при большем сама лампочка размазывается в пятно
 	# на потолке — тот же дефект, что был у объёмного света.
-	glow.emission_energy_multiplier = 2.5
+	glow.emission_energy_multiplier = 1.5
 	bulb.material_override = glow
 	add_child(bulb)
 

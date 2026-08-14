@@ -104,12 +104,14 @@ func _build_steam() -> GPUParticles3D:
 	mat.scale_max = 1.1
 	particles.process_material = mat
 
+	# Мелкие частицы: при шести сантиметрах пар читался цепочкой
+	# белых квадратов, а не паром.
 	var mesh := QuadMesh.new()
-	mesh.size = Vector2(0.06, 0.06)
+	mesh.size = Vector2(0.022, 0.022)
 	var steam_mat := StandardMaterial3D.new()
 	steam_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	steam_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	steam_mat.albedo_color = Color(1.0, 0.97, 0.93, 0.09)
+	steam_mat.albedo_color = Color(1.0, 0.97, 0.93, 0.05)
 	steam_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	mesh.material = steam_mat
 	particles.draw_pass_1 = mesh
