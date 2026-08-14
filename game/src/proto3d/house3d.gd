@@ -32,6 +32,7 @@ var _paper_material: StandardMaterial3D
 var _ceiling_material: StandardMaterial3D
 var _helmet_material: StandardMaterial3D
 var _furniture_material: StandardMaterial3D
+var _appliance_material: StandardMaterial3D
 var _stain: NoiseTexture2D
 var _micro: NoiseTexture2D
 var _mirror: Mirror
@@ -120,6 +121,13 @@ func _build_materials() -> void:
 	)
 	_furniture_material.albedo_color = Color(1.75, 1.62, 1.45)
 	_furniture_material.roughness = 0.55
+
+	# Техника: тёмная, но не чёрная. Чистый чёрный в кадре читается
+	# как дыра или заглушка, а не как предмет.
+	_appliance_material = StandardMaterial3D.new()
+	_appliance_material.albedo_color = Color(0.14, 0.14, 0.15)
+	_appliance_material.roughness = 0.4
+	_appliance_material.metallic = 0.25
 
 	# Единственная красная вещь в доме (CONCEPT_3D.md, «Тон»).
 	# Лак должен бликовать: шлем обязан ловить взгляд.
@@ -296,6 +304,30 @@ func _build_lights() -> void:
 	# Энергия выше комнатной: шкаф перед лампой съедает часть света,
 	# и при прежних 0.9 до входа не доходило почти ничего.
 	_lamp(Vector3(7.5, 2.6, -13.0), Color(1.0, 0.5, 0.3), 1.4, 5.2)
+
+	# Ночник у кровати: без него правая половина дальней комнаты была
+	# чернотой с красным бликом, и кадр читался как самый пустой в доме.
+	# Без арматуры — потолочный плафон на высоте 1.3 висел бы посреди
+	# комнаты ни на чём.
+	_point_light(Vector3(6.4, 1.15, -11.9), Color(1.0, 0.78, 0.52), 1.2, 3.5)
+
+
+## Источник без арматуры. Нужен там, где свет мотивирован соседним
+## предметом — ночник у кровати, подсветка часов, — и подвешивать
+## к потолку плафон было бы враньём.
+func _point_light(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
+	var light := OmniLight3D.new()
+	light.position = pos
+	light.light_color = color
+	light.light_energy = energy
+	light.omni_range = range_m
+	light.omni_attenuation = 2.0
+	light.light_size = 0.18
+	light.shadow_enabled = true
+	light.shadow_blur = 1.6
+	light.light_volumetric_fog_energy = 0.25
+	light.add_to_group("house_light")
+	add_child(light)
 
 
 func _lamp(pos: Vector3, color: Color, energy: float, range_m: float) -> void:
@@ -490,8 +522,11 @@ func _build_clutter() -> void:
 	_prop("mug", Vector3(-1.95, 0.92, -1.05), -0.5, _paper_material)
 
 	# Часы в коридоре: их вешают затем, чтобы игрок заметил,
-	# что стрелки стоят.
-	_prop("wall_clock", Vector3(1.42, 1.85, -6.2), -PI * 0.5, _dark_material)
+	# что стрелки стоят. Циферблат светлый — на тёмном материале
+	# часы просто не читались, и коридор выглядел пустым тупиком.
+	_prop("wall_clock", Vector3(1.42, 1.85, -6.2), -PI * 0.5, _paper_material)
+	# Своя подсветка: без неё циферблат теряется даже светлым.
+	_point_light(Vector3(1.15, 1.85, -6.2), Color(1.0, 0.88, 0.7), 0.25, 1.6)
 
 	# Дальняя комната — обжитая: кружка у кровати, книга, бутылка.
 	_prop("mug", Vector3(5.9, 0.44, -12.3), 0.2, _paper_material)
@@ -808,7 +843,9 @@ func _build_props() -> void:
 	_prop("cardboard_box", Vector3(5.4, 0.0, -12.2), -0.6, _floor_material)
 
 	# Кофемашина — точка покоя. Модель отдельно, логика отдельно.
-	_prop("coffee_machine", Vector3(1.55, 0.77, 0.15), -0.15, _dark_material)
+	# Не чёрная: на тёмном материале она читалась кубом-заглушкой
+	# и забивала лучшее световое пятно кадра.
+	_prop("coffee_machine", Vector3(1.55, 0.77, 0.15), -0.15, _appliance_material)
 
 	_coffee = CoffeePoint.new()
 	_coffee.id = "home_kitchen"
