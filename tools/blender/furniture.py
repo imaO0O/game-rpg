@@ -62,6 +62,17 @@ def cylinder(name, radius, depth, location=(0, 0, 0), rotation=(0, 0, 0), verts=
     return obj
 
 
+def bevel_object(obj, width, segments=2):
+    """Фаска отдельным вызовом: нужна там, где объект собран не через box()."""
+    bpy.context.view_layer.objects.active = obj
+    modifier = obj.modifiers.new(name="Bevel", type="BEVEL")
+    modifier.width = width
+    modifier.segments = segments
+    modifier.limit_method = "ANGLE"
+    modifier.angle_limit = math.radians(40)
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+
 def join(objects, name):
     for obj in objects:
         obj.select_set(True)
@@ -415,40 +426,150 @@ def make_snake():
     export(snake, "snake.glb")
 
 
-def make_figure():
-    """Силуэт человека для скримеров на записи.
+def limb(name, start, end, radius, taper=0.75):
+    """Конечность как усечённый конус между двумя точками.
 
-    Намеренно без лица и без деталей: на камере наблюдения человек
-    и так читается пятном, а любая проработка выдала бы, что фигура
-    ненастоящая. Работает силуэт, а не модель.
+    Коробки в роли рук и ног читаются деталями конструктора. Конус
+    сужается к кисти или стопе, и силуэт сразу становится телом,
+    а не набором брусков.
+    """
+    sx, sy, sz = start
+    ex, ey, ez = end
+    dx, dy, dz = ex - sx, ey - sy, ez - sz
+    length = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+    bpy.ops.mesh.primitive_cone_add(
+        radius1=radius,
+        radius2=radius * taper,
+        depth=length,
+        location=((sx + ex) / 2, (sy + ey) / 2, (sz + ez) / 2),
+        vertices=12,
+    )
+    obj = bpy.context.active_object
+    obj.name = name
+
+    # Разворачиваем конус вдоль отрезка: по умолчанию он смотрит вверх.
+    obj.rotation_euler = (
+        math.acos(dz / length) if length > 0 else 0.0,
+        0.0,
+        math.atan2(dy, dx) + math.pi / 2,
+    )
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+    return obj
+
+
+def make_figure():
+    """Фигура для скримеров: сутулая, худая, асимметричная.
+
+    Прежняя версия была симметричным набором коробок и читалась
+    манекеном из магазина, а не человеком в тёмном коридоре. Здесь
+    работают три вещи: наклон корпуса вперёд, разная длина и положение
+    рук, и вытянутые пропорции — фигура выше обычного человека, что
+    замечаешь не сразу, но чувствуешь.
+
+    Лица по-прежнему нет: на записи с камеры и в темноте оно всё равно
+    не читается, а нарисованное выдало бы подделку.
     """
     clear_scene()
     parts = []
 
-    # Ноги.
-    for x in (-0.09, 0.09):
-        parts.append(box("leg", (0.13, 0.15, 0.82), (x, 0, 0.41), bevel=0.02))
+    # Ноги слегка врозь и не в одной фазе: строго параллельные
+    # выдают модель, стоящую по стойке смирно.
+    parts.append(limb("leg_l", (-0.11, 0.02, 0.9), (-0.14, -0.04, 0.0), 0.075, 0.6))
+    parts.append(limb("leg_r", (0.11, -0.01, 0.9), (0.13, 0.06, 0.0), 0.075, 0.6))
 
-    # Корпус: сужается к талии и расширяется к плечам.
-    parts.append(box("hips", (0.34, 0.19, 0.22), (0, 0, 0.92), bevel=0.03))
-    parts.append(box("chest", (0.42, 0.22, 0.42), (0, 0, 1.28), bevel=0.04))
+    # Таз и грудная клетка. Клетка наклонена вперёд — сутулость.
+    parts.append(box("hips", (0.28, 0.17, 0.2), (0, 0, 0.98), bevel=0.04))
 
-    # Руки вдоль тела.
-    for x in (-0.26, 0.26):
-        parts.append(box("arm", (0.11, 0.13, 0.62), (x, 0, 1.14), bevel=0.02))
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, -0.03, 1.32))
+    chest = bpy.context.active_object
+    chest.name = "chest"
+    chest.scale = (0.34, 0.2, 0.48)
+    chest.rotation_euler = (math.radians(9), 0, 0)
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+    bevel_object(chest, 0.05)
+    parts.append(chest)
 
-    # Шея и голова.
-    parts.append(cylinder("neck", 0.05, 0.09, (0, 0, 1.53), verts=10))
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.115, location=(0, 0, 1.66), segments=18, ring_count=12)
+    # Плечи.
+    parts.append(cylinder("shoulders", 0.075, 0.36, (0, -0.04, 1.5), (0, math.pi / 2, 0), verts=12))
+
+    # Руки разной длины и в разном положении: одна висит, вторая
+    # чуть отведена. Симметрия — главное, что выдаёт манекен.
+    parts.append(limb("arm_l", (-0.19, -0.04, 1.48), (-0.26, 0.04, 0.86), 0.055, 0.65))
+    parts.append(limb("arm_r", (0.19, -0.04, 1.48), (0.23, -0.1, 0.92), 0.055, 0.65))
+
+    # Шея наклонена вместе с корпусом.
+    parts.append(limb("neck", (0, -0.05, 1.5), (0, -0.08, 1.63), 0.048, 0.9))
+
+    # Голова: вытянутая, слегка опущенная.
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        radius=0.105, location=(0, -0.09, 1.72), segments=20, ring_count=14
+    )
     head = bpy.context.active_object
     head.name = "head"
-    head.scale = (1.0, 1.15, 1.25)
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    head.scale = (0.92, 1.1, 1.3)
+    head.rotation_euler = (math.radians(12), 0, 0)
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
     parts.append(head)
 
     figure = join(parts, "Figure")
-    shade_smooth_by_angle(figure, angle=50)
+    shade_smooth_by_angle(figure, angle=55)
     export(figure, "figure.glb")
+
+
+def make_zade():
+    """Зейд для финала: та же фигура, но в пальто и с сумкой.
+
+    В скримерах он безликое пятно на записи. В финале он должен
+    читаться конкретным человеком, иначе встреча ничем не отличается
+    от очередного силуэта в коридоре.
+    """
+    clear_scene()
+    parts = []
+
+    parts.append(limb("leg_l", (-0.11, 0.02, 0.88), (-0.13, -0.03, 0.0), 0.08, 0.65))
+    parts.append(limb("leg_r", (0.11, 0.0, 0.88), (0.12, 0.05, 0.0), 0.08, 0.65))
+
+    # Пальто до колен: чуть расширяется книзу, но не бочкой —
+    # при равной ширине сверху и снизу силуэт читается мешком.
+    bpy.ops.mesh.primitive_cone_add(
+        radius1=0.19, radius2=0.25, depth=0.84, location=(0, -0.01, 1.22), vertices=20
+    )
+    coat = bpy.context.active_object
+    coat.name = "coat"
+    coat.scale = (1.0, 0.62, 1.0)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    parts.append(coat)
+
+    # Плечи поверх пальто: без них верх сходится в конус и человек
+    # выглядит воронкой.
+    parts.append(cylinder("shoulders", 0.07, 0.38, (0, -0.02, 1.58), (0, math.pi / 2, 0), verts=12))
+
+    # Воротник.
+    parts.append(cylinder("collar", 0.105, 0.1, (0, -0.03, 1.66), verts=14))
+
+    # Руки в карманах: короткие отрезки, уходящие в пальто.
+    parts.append(limb("arm_l", (-0.22, -0.03, 1.52), (-0.19, -0.08, 1.14), 0.055, 0.9))
+    parts.append(limb("arm_r", (0.22, -0.03, 1.52), (0.18, -0.08, 1.14), 0.055, 0.9))
+
+    parts.append(limb("neck", (0, -0.02, 1.64), (0, -0.05, 1.74), 0.05, 0.9))
+
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        radius=0.11, location=(0, -0.06, 1.83), segments=20, ring_count=14
+    )
+    head = bpy.context.active_object
+    head.name = "head"
+    head.scale = (0.94, 1.08, 1.22)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    parts.append(head)
+
+    # Сумка через плечо — то, с чем он ходил по её городам.
+    parts.append(box("strap", (0.03, 0.02, 0.5), (0.1, -0.11, 1.3), bevel=0.008))
+    parts.append(box("bag", (0.22, 0.1, 0.18), (-0.22, -0.1, 1.02), bevel=0.02))
+
+    zade = join(parts, "Zade")
+    shade_smooth_by_angle(zade, angle=55)
+    export(zade, "zade.glb")
 
 
 def make_ceiling_lamp():
@@ -618,6 +739,7 @@ def main():
     make_suitcase()
     make_snake()
     make_figure()
+    make_zade()
     make_ceiling_lamp()
     make_mug()
     make_book()

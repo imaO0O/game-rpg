@@ -495,23 +495,64 @@ func _build_trim() -> void:
 ## Мелочь, которой живут комнаты: бумага на полу, бутылки, забытые вещи.
 ## Пустая комната с одним предметом читается как кукольный домик,
 ## сколько на неё ни вешай света.
+## Раскладывает предметы по площадке со случайным сдвигом и поворотом.
+##
+## Расставленное вручную по круглым координатам выдаёт себя ритмом:
+## глаз замечает, что бумаги лежат через равные промежутки, даже когда
+## промежутки разные. Семя фиксированное, поэтому дом каждый раз
+## одинаковый — случайность нужна для вида, а не для разнообразия.
+func _scatter(model: String, centre: Vector3, spread: Vector2, count: int, material: Material, seed_value: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+
+	for i in count:
+		var offset := Vector3(
+			rng.randf_range(-spread.x, spread.x),
+			0.0,
+			rng.randf_range(-spread.y, spread.y)
+		)
+		_prop(model, centre + offset, rng.randf_range(0.0, TAU), material)
+
+
+## Бумаги: плоские листы со случайным поворотом и лёгким наклоном.
+## Лежащие строго горизонтально выглядят наклейками на полу.
+func _scatter_papers(centre: Vector3, spread: Vector2, count: int, seed_value: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+
+	for i in count:
+		var sheet := _slab(
+			centre + Vector3(
+				rng.randf_range(-spread.x, spread.x),
+				rng.randf_range(0.0, 0.004),
+				rng.randf_range(-spread.y, spread.y)
+			),
+			Vector3(0.21, 0.001, 0.29),
+			_paper_material
+		)
+		sheet.rotation.y = rng.randf_range(0.0, TAU)
+		# Едва заметный наклон: бумага лежит на неровном полу.
+		sheet.rotation.x = rng.randf_range(-0.03, 0.03)
+		sheet.rotation.z = rng.randf_range(-0.03, 0.03)
+
+
 func _build_clutter() -> void:
 	# Бумаги — плоские листы, разбросанные без порядка.
-	var papers := [
-		Vector3(0.9, 0.002, -0.6), Vector3(1.2, 0.002, -0.9),
-		Vector3(-1.4, 0.002, 0.9), Vector3(0.2, 0.002, -4.2),
-		Vector3(-0.6, 0.002, -6.1), Vector3(0.5, 0.002, -9.8),
-		Vector3(4.6, 0.002, -10.2), Vector3(5.8, 0.002, -12.4),
-	]
-	for i in papers.size():
-		var sheet := _slab(papers[i], Vector3(0.21, 0.001, 0.29), _paper_material)
-		sheet.rotation.y = float(i) * 1.37
+	# Бумаги кучками, а не по одной: рассыпанное веером у стола
+	# и разлетевшееся по коридору читается как след события,
+	# тогда как равномерная россыпь — как расстановка.
+	_scatter_papers(Vector3(1.1, 0.002, -0.7), Vector2(0.75, 0.55), 5, 11)
+	_scatter_papers(Vector3(-1.3, 0.002, 0.95), Vector2(0.35, 0.3), 2, 23)
+	_scatter_papers(Vector3(0.1, 0.002, -5.2), Vector2(0.6, 1.6), 4, 37)
+	_scatter_papers(Vector3(5.2, 0.002, -11.4), Vector2(1.1, 0.9), 3, 53)
 
-	# Бутылки и банки вдоль стен.
+	# Бутылки сбиваются в кучки по углам, а не стоят по одной вдоль
+	# стены на равных промежутках.
+	_scatter("bottle", Vector3(-2.25, 0.0, 1.5), Vector2(0.3, 0.35), 4, _dark_material, 71)
+	_scatter("bottle", Vector3(6.7, 0.0, -12.6), Vector2(0.4, 0.5), 3, _dark_material, 89)
+
 	var bottles := [
-		Vector3(-2.2, 0.0, 1.6), Vector3(-2.35, 0.0, 1.35),
 		Vector3(1.3, 0.0, -3.9), Vector3(-1.2, 0.0, -8.2),
-		Vector3(6.8, 0.0, -9.6), Vector3(6.6, 0.0, -12.8),
 	]
 	for pos: Vector3 in bottles:
 		var bottle := _cylinder(pos + Vector3(0, 0.13, 0), 0.035, 0.26, _dark_material)
@@ -659,7 +700,9 @@ func _build_zade_room() -> void:
 
 	# Стул стоит вплотную к доске и развёрнут к ней: здесь сидели долго.
 	_prop("chair", Vector3(-4.0, 0.0, -16.4), 0.0, _furniture_material)
-	_prop("shelf", Vector3(-5.6, 0.0, -17.4), PI * 0.5, _furniture_material)
+	# Отодвинут к дальней стене: стоя посреди комнаты, он закрывал
+	# Зейда в финале по пояс.
+	_prop("shelf", Vector3(-5.7, 0.0, -14.6), PI * 0.5, _furniture_material)
 	_prop("cardboard_box", Vector3(-2.7, 0.0, -17.9), 0.5, _floor_material)
 	_prop("suitcase", Vector3(-2.6, 0.0, -15.4), -0.3, _dark_material)
 
@@ -675,7 +718,7 @@ func _build_zade_room() -> void:
 	# плотный узел фотографий и нитей — то есть ровно то, ради чего
 	# игрок сюда шёл.
 	var finale := Finale.new()
-	finale.position = Vector3(-4.85, 0.0, -17.9)
+	finale.position = Vector3(-4.55, 0.0, -17.55)
 	add_child(finale)
 
 	# Тёплый свет только на нём: он последнее, что игрок увидит в доме.

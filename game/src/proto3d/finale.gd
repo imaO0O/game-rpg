@@ -150,9 +150,12 @@ func is_done() -> bool:
 
 
 func _build_zade() -> Node3D:
-	var path := "res://assets/models/figure.glb"
+	# Своя модель, а не безликий силуэт скримеров: в финале он должен
+	# читаться конкретным человеком, иначе встреча ничем не отличается
+	# от очередной тени в коридоре.
+	var path := "res://assets/models/zade.glb"
 	if not ResourceLoader.exists(path):
-		push_warning("Нет модели фигуры для финала")
+		push_warning("Нет модели Зейда для финала")
 		return Node3D.new()
 
 	var scene: PackedScene = load(path)
