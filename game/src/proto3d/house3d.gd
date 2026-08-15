@@ -667,6 +667,15 @@ func _build_zade_room() -> void:
 	# висящая по центру била бы прямо в глаза входящему.
 	_lamp(Vector3(-5.3, 1.75, -17.6), Color(1.0, 0.72, 0.42), 0.7, 3.4)
 
+	# Финал в глубине его комнаты, за доской: чтобы дойти, надо пройти
+	# мимо всего, что он собрал.
+	var finale := Finale.new()
+	finale.position = Vector3(-6.6, 0.0, -19.2)
+	add_child(finale)
+
+	# Тёплый свет только на нём: он последнее, что игрок увидит в доме.
+	_point_light(Vector3(-6.6, 1.7, -19.4), Color(1.0, 0.82, 0.6), 0.8, 3.6, 2.4)
+
 	# Монитор на столике сбоку: отсюда он смотрел за всем домом.
 	_monitor = CameraMonitor.new()
 	_monitor.position = Vector3(-2.35, 1.3, -17.2)
@@ -781,6 +790,11 @@ func _build_scares() -> void:
 	var pinkie := preload("res://src/proto3d/scare_pinkie.gd").new()
 	pinkie.position = Vector3(4.6, 1.2, -11.2)
 	add_child(pinkie)
+
+	# Срабатывает от неудачи игрока, а не от места: врезался в стены
+	# трижды — получил сочувствие от радио.
+	var stupid := preload("res://src/proto3d/scare_stupid.gd").new()
+	add_child(stupid)
 
 	# Убегающий осколок в коридоре. Не пугает вовсе — раздражает,
 	# а потом становится смешным. Нужен затем, чтобы игрок перестал

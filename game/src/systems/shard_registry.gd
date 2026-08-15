@@ -27,6 +27,7 @@ const FALLBACK := {
 	"moscow_03": {"caption": "Переход", "area": "Москва"},
 	"moscow_04": {"caption": "За стеной перехода", "area": "Москва"},
 	"moscow_05": {"caption": "Депо", "area": "Москва"},
+	"zade_last": {"caption": "То, что он хранил", "area": "Дом"},
 	"night_01": {"caption": "Двор ночью", "area": "Рязань ночью"},
 	"night_02": {"caption": "Первый этаж", "area": "Рязань ночью"},
 	"night_03": {"caption": "За стеной в доме", "area": "Рязань ночью"},
