@@ -27,6 +27,7 @@ const VIEWS := [
 	{"name": "h_board", "pos": Vector3(-4.0, 1.4, -17.0), "yaw": 0.0, "pitch": 0.02},
 	# Монитор наблюдения: кадр от стула, как смотрел бы сам Зейд.
 	{"name": "i_monitor", "pos": Vector3(-3.6, 1.35, -17.2), "yaw": -1.57, "pitch": -0.03},
+	{"name": "j_finale", "pos": Vector3(-4.2, 1.35, -15.2), "yaw": 0.0, "pitch": -0.05},
 ]
 
 var _level: Node3D

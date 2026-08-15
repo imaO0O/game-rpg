@@ -69,6 +69,17 @@ static func total() -> int:
 	return all().size()
 
 
+## Города, где она была, по одному разу и в порядке появления.
+## Нужно карте в Логове: флажок ставится за место, а не за осколок.
+static func areas() -> Array[String]:
+	var seen: Array[String] = []
+	for id: String in all():
+		var name: String = area(id)
+		if not name.is_empty() and not seen.has(name):
+			seen.append(name)
+	return seen
+
+
 ## Перечитать каталог — на случай, если private/ подложили при запущенной игре.
 static func reload() -> void:
 	_loaded = false
