@@ -24,10 +24,16 @@ const LINES := [
 	{"text": "Зейд: дом был не мой. я просто... смотрел.", "hold": 3.0},
 ]
 
+## Во сколько раз быстрее идут реплики в проверках. Ждать пятнадцать
+## секунд на каждом прогоне тестов — непозволительная роскошь, а сама
+## последовательность от скорости не зависит.
+static var speed_scale := 1.0
+
 const TRIGGER_SIZE := Vector3(3.4, 2.4, 3.4)
 
 var _figure: Node3D
 var _memory: MemoryObject
+var _backlight: OmniLight3D
 var _line := -1
 var _timer := 0.0
 var _running := false
@@ -46,11 +52,24 @@ func _ready() -> void:
 	_figure = _build_zade()
 	add_child(_figure)
 
+	# Контровой свет из-за плеч: тёмный силуэт на тёмной доске
+	# сливается с ней, и вместо человека читается пятно.
+	_backlight = OmniLight3D.new()
+	_backlight.position = Vector3(-0.9, 1.9, -1.5)
+	_backlight.light_color = Color(0.44, 0.62, 0.79)
+	_backlight.light_energy = 2.6
+	_backlight.omni_range = 3.2
+	_backlight.omni_attenuation = 2.2
+	_backlight.light_size = 0.25
+	_backlight.shadow_enabled = true
+	_backlight.visible = false
+	add_child(_backlight)
+
 	# Последний осколок лежит у него в руках и берётся только
 	# после разговора: взять его раньше — значит пропустить сцену.
 	_memory = MemoryObject.new()
 	_memory.id = "zade_last"
-	_memory.position = Vector3(0.0, 0.85, 0.35)
+	_memory.position = Vector3(-0.35, 0.85, 0.35)
 	_memory.escape_check = _hold_until_done
 	add_child(_memory)
 
@@ -74,6 +93,13 @@ func _on_body_entered(body: Node3D) -> void:
 
 	Game.set_flag("finale")
 	_running = true
+
+	# Подсказка взаимодействия во время сцены висела бы прямо на голове
+	# говорящего и поверх доски — то есть ровно на том, ради чего игрок
+	# сюда шёл. Гасим её, пока он говорит.
+	_set_pickable(false)
+	_backlight.visible = true
+
 	started.emit()
 	_advance()
 
@@ -86,13 +112,14 @@ func _advance() -> void:
 		return
 
 	var spec: Dictionary = LINES[_line]
-	_timer = spec.hold
+	_timer = spec.hold * speed_scale
 	print("[финал] %s" % spec.text)
 
 
 func _finish() -> void:
 	_running = false
 	_done = true
+	_set_pickable(true)
 
 	# Уходит: разворачивается и растворяется в темноте, а не исчезает
 	# рывком. Он не призрак, он просто уходит.
@@ -106,6 +133,16 @@ func _finish() -> void:
 ## Пока идёт разговор, осколок взять нельзя.
 func _hold_until_done() -> bool:
 	return not _done
+
+
+## Осколок не должен даже подсвечиваться под прицелом, пока идёт сцена.
+func _set_pickable(value: bool) -> void:
+	if _memory == null:
+		return
+	for child in _memory.get_children():
+		if child is Area3D:
+			(child as Area3D).monitorable = value
+			(child as Area3D).collision_layer = Interactable.LAYER if value else 0
 
 
 func is_done() -> bool:

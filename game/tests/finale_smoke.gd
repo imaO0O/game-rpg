@@ -26,6 +26,11 @@ var _checks := 0
 
 func _ready() -> void:
 	Game.reset()
+	# Реплики вдесятеро быстрее: проверяется последовательность,
+	# а не терпение. Ставится до сборки дома — финал читает это
+	# значение при первой же реплике.
+	Finale.speed_scale = 0.1
+
 	_house = HOUSE.instantiate()
 	add_child(_house)
 
@@ -103,7 +108,7 @@ func _phase_during() -> void:
 
 ## Ждём конца реплик и проверяем, что осколок наконец даётся.
 func _phase_after() -> void:
-	if _finishes == 0 and _timer < 20.0:
+	if _finishes == 0 and _timer < 4.0:
 		return
 
 	_check(_finishes == 1, "сцена дошла до конца (завершений: %d)" % _finishes)
