@@ -39,6 +39,7 @@ var _mirror: Mirror
 var _coffee: CoffeePoint
 var _monitor: CameraMonitor
 var _cameras: Array[SecurityCamera] = []
+var _runaway_memory: MemoryObject
 
 
 func _ready() -> void:
@@ -706,6 +707,8 @@ func _build_memories() -> void:
 		memory.model = spot.model
 		memory.position = spot.pos
 		add_child(memory)
+		if spot.id == "ryazan_03":
+			_runaway_memory = memory
 
 
 ## Ровный гул дома. Полная тишина в хорроре работает хуже гула:
@@ -778,6 +781,18 @@ func _build_scares() -> void:
 	var pinkie := preload("res://src/proto3d/scare_pinkie.gd").new()
 	pinkie.position = Vector3(4.6, 1.2, -11.2)
 	add_child(pinkie)
+
+	# Убегающий осколок в коридоре. Не пугает вовсе — раздражает,
+	# а потом становится смешным. Нужен затем, чтобы игрок перестал
+	# ждать удара от каждой странности в доме.
+	if _runaway_memory != null:
+		var runaway := preload("res://src/proto3d/scare_runaway.gd").new()
+		runaway.attach(_runaway_memory, [
+			Vector3(0.6, 0.35, -6.4),
+			Vector3(-0.7, 0.35, -8.8),
+			Vector3(0.8, 0.35, -11.2),
+		] as Array[Vector3])
+		add_child(runaway)
 
 	# Дементор из пара — со второго кофе. Первый раз игрок уже получил
 	# скример от самой машины, два подряд в одном месте превратили бы

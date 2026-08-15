@@ -11,6 +11,12 @@ extends Interactable
 
 signal collected(id: String)
 
+## Проверка перед подбором: если вернёт true, осколок не даётся в руки.
+## Через неё убегающий осколок вмешивается в подбор, а сам предмет
+## о нём ничего не знает. Сигналом это не сделать — сигналы в Godot
+## не возвращают значений.
+var escape_check: Callable
+
 ## Идентификатор в каталоге осколков.
 @export var id := ""
 ## Модель предмета из assets/models. Пустая — простая подставка.
@@ -108,8 +114,12 @@ func caption() -> String:
 	return ShardRegistry.caption(id)
 
 
-## Взять. Возвращает false, если осколок уже был собран.
+## Взять. Возвращает false, если осколок уже был собран
+## или если он сейчас не даётся.
 func interact() -> bool:
+	if escape_check.is_valid() and escape_check.call():
+		return false
+
 	if not Game.collect_shard(id):
 		return false
 	collected.emit(id)
