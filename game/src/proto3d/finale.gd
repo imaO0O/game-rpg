@@ -54,13 +54,16 @@ func _ready() -> void:
 
 	# Контровой свет из-за плеч: тёмный силуэт на тёмной доске
 	# сливается с ней, и вместо человека читается пятно.
+	# Вплотную за плечами, а не в глубине комнаты: стоя далеко,
+	# источник освещал стену за спиной, а сам силуэт оставался
+	# тёмным пятном на тёмной доске — то есть ровно наоборот.
 	_backlight = OmniLight3D.new()
-	_backlight.position = Vector3(-0.9, 1.9, -1.5)
+	_backlight.position = Vector3(-0.12, 1.72, -1.05)
 	_backlight.light_color = Color(0.44, 0.62, 0.79)
-	_backlight.light_energy = 2.6
-	_backlight.omni_range = 3.2
-	_backlight.omni_attenuation = 2.2
-	_backlight.light_size = 0.25
+	_backlight.light_energy = 1.6
+	_backlight.omni_range = 1.9
+	_backlight.omni_attenuation = 2.6
+	_backlight.light_size = 0.16
 	_backlight.shadow_enabled = true
 	_backlight.visible = false
 	add_child(_backlight)
