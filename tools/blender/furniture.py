@@ -515,20 +515,86 @@ def make_figure():
     # Длинная шея, склонённая набок.
     parts.append(limb("neck", (0, -0.05, 1.68), (0.04, -0.09, 1.88), 0.04, 0.85))
 
-    bpy.ops.mesh.primitive_uv_sphere_add(
-        radius=0.1, location=(0.05, -0.1, 1.96), segments=20, ring_count=14
-    )
-    head = bpy.context.active_object
-    head.name = "head"
-    head.scale = (0.86, 1.05, 1.32)
-    # Наклон набок — то, чего живой человек не держит подолгу.
-    head.rotation_euler = (math.radians(14), math.radians(-3), math.radians(13))
-    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
-    parts.append(head)
+    parts.append(_skull((0.05, -0.1, 1.96)))
+
+    # Кисти: пальцы веером. Рука, обрывающаяся тупым цилиндром,
+    # читается культёй, и глаз спотыкается именно об это.
+    parts += _hand((-0.29, 0.05, 0.72), yaw=math.radians(-12), seed=1)
+    parts += _hand((0.27, -0.13, 0.78), yaw=math.radians(9), seed=2)
 
     figure = join(parts, "Figure")
     shade_smooth_by_angle(figure, angle=55)
     export(figure, "figure.glb")
+
+
+def _skull(location):
+    """Череп фигуры: не гладкое яйцо, а бугристая асимметричная форма.
+
+    Голова — то, что взгляд считывает первым. Пока она была такой же
+    сферой, как у Зейда, силуэты оставались близнецами, сколько
+    ни меняй пропорции тела.
+    """
+    x, y, z = location
+
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.1, location=location, segments=20, ring_count=14)
+    head = bpy.context.active_object
+    head.name = "head"
+    head.scale = (0.82, 1.06, 1.38)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+    # Второй бугор со смещением: объединение даёт неровный свод черепа.
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        radius=0.072, location=(x - 0.03, y + 0.02, z + 0.05), segments=16, ring_count=10
+    )
+    bump = bpy.context.active_object
+    bump.name = "bump"
+
+    modifier = head.modifiers.new(name="Union", type="BOOLEAN")
+    modifier.operation = "UNION"
+    modifier.object = bump
+    bpy.context.view_layer.objects.active = head
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    bpy.data.objects.remove(bump, do_unlink=True)
+
+    # Сужение книзу: у Зейда голова садится на шею ровно, здесь —
+    # вытягивается к ней клином.
+    taper = head.modifiers.new(name="Taper", type="SIMPLE_DEFORM")
+    taper.deform_method = "TAPER"
+    taper.deform_axis = "Z"
+    taper.factor = 0.45
+    bpy.context.view_layer.objects.active = head
+    bpy.ops.object.modifier_apply(modifier=taper.name)
+
+    # Наклон набок — то, чего живой человек не держит подолгу.
+    head.rotation_euler = (math.radians(14), math.radians(-3), math.radians(13))
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
+    return head
+
+
+def _hand(position, yaw, seed):
+    """Пальцы веером на конце руки. Длина и разворот разные —
+    ровная гребёнка выглядела бы вилкой."""
+    fingers = []
+    px, py, pz = position
+
+    for i in range(4):
+        length = 0.062 + ((seed * 7 + i * 5) % 4) * 0.008
+        spread = math.radians(-16 + i * 11)
+
+        finger = limb(
+            "finger",
+            (px, py, pz),
+            (
+                px + math.sin(yaw + spread) * 0.02,
+                py + math.cos(yaw + spread) * 0.02,
+                pz - length,
+            ),
+            0.013,
+            0.55,
+        )
+        fingers.append(finger)
+
+    return fingers
 
 
 def make_zade():

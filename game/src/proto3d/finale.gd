@@ -68,6 +68,18 @@ func _ready() -> void:
 	_backlight.visible = false
 	add_child(_backlight)
 
+	# Слабый заполняющий спереди: без него Зейд в кадре встречи —
+	# бесформенное тёмное пятно, и вся сцена держится на голосе.
+	# Тёплый, чтобы не спорить с холодным контровым.
+	var fill := OmniLight3D.new()
+	fill.position = Vector3(0.35, 1.5, 1.1)
+	fill.light_color = Color(1.0, 0.86, 0.68)
+	fill.light_energy = 0.55
+	fill.omni_range = 2.6
+	fill.omni_attenuation = 2.4
+	fill.shadow_enabled = false
+	add_child(fill)
+
 	# Последний осколок лежит у него в руках и берётся только
 	# после разговора: взять его раньше — значит пропустить сцену.
 	_memory = MemoryObject.new()
