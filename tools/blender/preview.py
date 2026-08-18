@@ -59,9 +59,18 @@ def setup_studio():
     bpy.context.collection.objects.link(rim_obj)
 
 
-def frame_object(obj):
-    """Камера в три четверти, кадр по габаритам модели."""
-    bbox = [obj.matrix_world @ v.co for v in obj.data.vertices]
+def frame_object(objects):
+    """Камера в три четверти, кадр по габаритам всей модели.
+
+    Именно по всей: модель из нескольких частей кадрировалась
+    по первой попавшейся, и половина фигуры уходила за кадр.
+    """
+    if not isinstance(objects, list):
+        objects = [objects]
+
+    bbox = []
+    for obj in objects:
+        bbox.extend(obj.matrix_world @ v.co for v in obj.data.vertices)
     if not bbox:
         return None
 

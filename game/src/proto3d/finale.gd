@@ -74,7 +74,7 @@ func _ready() -> void:
 	var fill := OmniLight3D.new()
 	fill.position = Vector3(0.35, 1.5, 1.1)
 	fill.light_color = Color(1.0, 0.86, 0.68)
-	fill.light_energy = 0.55
+	fill.light_energy = 0.3
 	fill.omni_range = 2.6
 	fill.omni_attenuation = 2.4
 	fill.shadow_enabled = false
@@ -168,7 +168,7 @@ func _build_zade() -> Node3D:
 	# Своя модель, а не безликий силуэт скримеров: в финале он должен
 	# читаться конкретным человеком, иначе встреча ничем не отличается
 	# от очередной тени в коридоре.
-	var path := "res://assets/models/zade.glb"
+	var path := "res://assets/models/stalker.glb"
 	if not ResourceLoader.exists(path):
 		push_warning("Нет модели Зейда для финала")
 		return Node3D.new()
@@ -177,13 +177,9 @@ func _build_zade() -> Node3D:
 	var node := scene.instantiate()
 	node.position = Vector3(0.0, 0.0, -0.6)
 
-	# Не чёрный силуэт, как в скримерах: здесь он наконец человек,
-	# а не тень на записи.
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.22, 0.2, 0.21)
-	mat.roughness = 0.85
-	_paint(node, mat)
-
+	# Материалы приходят вместе с моделью и не перекрашиваются: куртка,
+	# кожа и снаряжение отражают свет по-разному, и ровно это отличает
+	# человека в финале от силуэта в скримере.
 	return node
 
 
