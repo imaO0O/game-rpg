@@ -1,0 +1,68 @@
+# === ЛИЧНОЕ — НИКОГДА НЕ КОММИТИТЬ ===
+# Соглашение унаследовано из imaO0O/game-rpg осознанно: репозиторий
+# публичный, в него едет только движок. Контент и документация живут
+# локально и бэкапятся отдельно, вне git.
+
+# Документация (концепция, шутки, план — раскрывают сюрприз целиком)
+*.md
+
+# Материалы и контент: фото, видео, голосовые, переписка, подписи осколков
+private/
+Assets/Game/Art/photos/
+Assets/Game/Audio/voice/
+*.export.json
+
+# === Unity ===
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Не коммитить кэш адресуемых ассетов
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Файлы проектов IDE генерируются Unity
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# === Сборки ===
+*.apk
+*.aab
+*.unitypackage
+*.app
+*.exe
+*.zip
+
+# === Редакторы ===
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+
+# === ОС ===
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# === Прочее ===
+sysinfo.txt
+crashlytics-build.properties
