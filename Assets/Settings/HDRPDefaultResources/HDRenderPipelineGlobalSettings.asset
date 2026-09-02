@@ -28,7 +28,9 @@ MonoBehaviour:
       m_CustomPostProcessTypesAsString: []
     m_AfterPostProcessCustomPostProcesses:
       m_InjectionPoint: 2
-      m_CustomPostProcessTypesAsString: []
+      m_CustomPostProcessTypesAsString:
+      - Game.Rendering.CamcorderPass, Game.Runtime, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
   beforeTransparentCustomPostProcesses: []
   beforePostProcessCustomPostProcesses: []
   afterPostProcessBlursCustomPostProcesses: []
@@ -403,7 +405,9 @@ MonoBehaviour:
           m_CustomPostProcessTypesAsString: []
         m_AfterPostProcessCustomPostProcesses:
           m_InjectionPoint: 2
-          m_CustomPostProcessTypesAsString: []
+          m_CustomPostProcessTypesAsString:
+          - Game.Rendering.CamcorderPass, Game.Runtime, Version=0.0.0.0, Culture=neutral,
+            PublicKeyToken=null
     - rid: 3951948315904704529
       type: {class: LookDevVolumeProfileSettings, ns: UnityEngine.Rendering.HighDefinition, asm: Unity.RenderPipelines.HighDefinition.Runtime}
       data:
