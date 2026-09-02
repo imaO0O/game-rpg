@@ -22,8 +22,7 @@ namespace Game.Tests
         private const string PointId = "kitchen";
         private const float BatterySeconds = 2f;
 
-        private string _savePath;
-        private string _backupPath;
+        private readonly SaveFileGuard _saveGuard = new();
 
         private GameObject _sessionObject;
         private GameObject _playerObject;
@@ -32,12 +31,7 @@ namespace Game.Tests
         [SetUp]
         public void SetUp()
         {
-            _savePath = Path.Combine(Application.persistentDataPath, GameSession.SaveFileName);
-            _backupPath = _savePath + ".test-backup";
-            if (File.Exists(_savePath))
-            {
-                File.Move(_savePath, _backupPath);
-            }
+            _saveGuard.Take();
 
             _sessionObject = new GameObject("GameSession");
             _sessionObject.AddComponent<GameSession>();
@@ -57,16 +51,7 @@ namespace Game.Tests
             }
 
             Object.DestroyImmediate(_sessionObject);
-
-            if (File.Exists(_savePath))
-            {
-                File.Delete(_savePath);
-            }
-
-            if (File.Exists(_backupPath))
-            {
-                File.Move(_backupPath, _savePath);
-            }
+            _saveGuard.Release();
         }
 
         private CoffeePoint CreatePoint()
@@ -125,8 +110,8 @@ namespace Game.Tests
 
             point.TryInteract();
 
-            Assert.IsTrue(File.Exists(_savePath), "Кофемашина должна была записать сохранение");
-            StringAssert.Contains("night_02", File.ReadAllText(_savePath));
+            Assert.IsTrue(_saveGuard.SaveExists, "Кофемашина должна была записать сохранение");
+            StringAssert.Contains("night_02", File.ReadAllText(_saveGuard.SavePath));
         }
 
         [UnityTest]

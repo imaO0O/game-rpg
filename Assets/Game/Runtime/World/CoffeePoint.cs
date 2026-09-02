@@ -42,6 +42,12 @@ namespace Game.World
         private float _baseSteamRate;
         private bool _isResting;
 
+        /// <summary>
+        /// Кофе выпит. Скример «Дементор» считает по этому событию, с какого
+        /// раза вырастать из пара.
+        /// </summary>
+        public event System.Action<string> Used;
+
         public string Id => _id;
 
         public bool IsResting => _isResting;
@@ -114,6 +120,7 @@ namespace Game.World
 
             RechargePlayer();
             StartCoroutine(Rest());
+            Used?.Invoke(_id);
             return true;
         }
 

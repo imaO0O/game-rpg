@@ -1,4 +1,5 @@
 using System.IO;
+using Game.Narration;
 using UnityEngine;
 
 namespace Game.Progression
@@ -31,6 +32,13 @@ namespace Game.Progression
 
         public ShardCatalog Shards { get; private set; }
 
+        /// <summary>
+        /// Куда скримеры отдают разрядки, а интерфейс их забирает.
+        /// Живёт здесь, а не отдельной одиночкой: второй глобальный объект
+        /// проекту не нужен.
+        /// </summary>
+        public PunchlineChannel Punchlines { get; private set; }
+
         public bool HasSave => _saveFile.Exists;
 
         private void Awake()
@@ -48,6 +56,7 @@ namespace Game.Progression
 
             State = new GameState();
             Shards = ShardCatalog.LoadDefault();
+            Punchlines = new PunchlineChannel();
             _saveFile = new SaveFile(
                 Path.Combine(Application.persistentDataPath, SaveFileName));
         }

@@ -16,10 +16,23 @@ namespace Game.Tests
     {
         public static void Set(object target, string name, object value)
         {
-            var field = target.GetType().GetField(name,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(field, $"Нет поля {name} у {target.GetType().Name}");
-            field.SetValue(target, value);
+            // GetField не находит приватные поля базового класса: для
+            // рефлексии они не унаследованные члены. У скримеров почти всё
+            // общее лежит именно в базовом Scare, поэтому идём по иерархии.
+            for (var type = target.GetType(); type != null; type = type.BaseType)
+            {
+                var field = type.GetField(name,
+                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                if (field == null)
+                {
+                    continue;
+                }
+
+                field.SetValue(target, value);
+                return;
+            }
+
+            Assert.Fail($"Нет поля {name} у {target.GetType().Name} и его предков");
         }
     }
 }
