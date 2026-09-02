@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Reflection;
 using Game.Interaction;
 using NUnit.Framework;
 using UnityEngine;
@@ -45,7 +44,7 @@ namespace Game.Tests
             var camera = _cameraObject.AddComponent<Camera>();
 
             _interactor = _cameraObject.AddComponent<Interactor>();
-            SetPrivateField(_interactor, "_camera", camera);
+            PrivateField.Set(_interactor, "_camera", camera);
             _cameraObject.SetActive(true);
         }
 
@@ -172,19 +171,6 @@ namespace Game.Tests
             collider.isTrigger = true;
 
             _target = _targetObject.AddComponent<StubInteractable>();
-        }
-
-        /// <summary>
-        /// Поля с [SerializeField] назначаются в префабе, а не кодом.
-        /// В тесте префаба нет, поэтому ссылку подставляем рефлексией —
-        /// ради одного теста расширять открытый интерфейс не стоит.
-        /// </summary>
-        private static void SetPrivateField(object target, string fieldName, object value)
-        {
-            var field = target.GetType().GetField(fieldName,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.IsNotNull(field, $"Нет поля {fieldName}");
-            field.SetValue(target, value);
         }
     }
 }
